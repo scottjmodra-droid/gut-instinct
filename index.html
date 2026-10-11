@@ -318,7 +318,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet">
     <div class="card-head"><h2 id="sheetTitle">Edit suspects</h2><button class="linkbtn" id="closeSheet">Done</button></div>
-    <div class="sub" style="margin-bottom:8px">Rename, reorder (▲▼), add or remove. Removed defaults, and anything you've logged, move to the bottom so you can bring them back.</div>
+    <div class="sub" id="sheetSub" style="margin-bottom:8px">Rename, reorder (▲▼), add or remove. Removing one that's been logged just hides it — past days keep their record.</div>
     <div id="editList"></div>
     <div class="maxnote" id="maxNote" hidden>That's the max of 15. Remove one to add another.</div>
     <div class="editrow" id="addRow" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
@@ -330,7 +330,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.11 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.12 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -361,12 +361,14 @@ const FACE = {good:'😊',ok:'😐',bad:'😣',none:'🚫'};
 let state = load();
 if(!state.circs){ state.circs=DEFAULT_CIRCS.map(c=>({...c})); }
 if(!state.periods){ state.periods=[]; }
-const DEFAULT_IDS = new Set([...DEFAULT_FOODS,...DEFAULT_CIRCS].map(x=>x.id));
-// defaults can be removed (hidden) but never lost: bring back any missing ones as hidden
+// default circumstances can be removed (hidden) but never lost; suspects follow the normal rule
+const DEFAULT_IDS = new Set(DEFAULT_CIRCS.map(x=>x.id));
 function ensureDefaults(s){
-  [['foods',DEFAULT_FOODS],['circs',DEFAULT_CIRCS]].forEach(([k,defs])=>{
-    defs.forEach(d=>{ if(!s[k].some(x=>x.id===d.id)) s[k].push({...d,hidden:true}); });
-  });
+  DEFAULT_CIRCS.forEach(d=>{ if(!s.circs.some(x=>x.id===d.id)) s.circs.push({...d,hidden:true}); });
+  // tidy-up from v1.11: drop hidden default suspects that were never logged
+  const usedF=new Set(Object.values(s.entries).flatMap(e=>e.foods||[]));
+  const defF=new Set(DEFAULT_FOODS.map(x=>x.id));
+  s.foods=s.foods.filter(f=>!(f.hidden && defF.has(f.id) && !usedF.has(f.id)));
 }
 ensureDefaults(state);
 { const p=state.circs.find(c=>c.id==='period'); if(p && p.emoji==='🩸'){ p.emoji='📅'; try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} } }
@@ -733,8 +735,8 @@ document.getElementById('restoreFile').onchange=ev=>{
 // ---- edit sheet (suspects or circumstances)
 let editMode='foods';
 const EDIT = {
-  foods:{title:'Edit suspects', ph:'New suspect, e.g. Tomato', em:'🍽️', used:f=>Object.values(state.entries).some(e=>e.foods.includes(f.id))},
-  circs:{title:'Edit circumstances', ph:'e.g. Stressed, Slept badly', em:'📌', used:c=> c.id==='period' ? state.periods.length>0 : Object.values(state.entries).some(e=>(e.circs||[]).includes(c.id))}
+  foods:{title:'Edit suspects', protect:false, ph:'New suspect, e.g. Tomato', em:'🍽️', used:f=>Object.values(state.entries).some(e=>e.foods.includes(f.id))},
+  circs:{title:'Edit circumstances', protect:true, ph:'e.g. Stressed, Slept badly', em:'📌', used:c=> c.id==='period' ? state.periods.length>0 : Object.values(state.entries).some(e=>(e.circs||[]).includes(c.id))}
 };
 const L = () => state[editMode];
 const activeCount = () => L().filter(x=>!x.hidden).length;
@@ -743,6 +745,9 @@ function renderEdit(){
   document.getElementById('sheetTitle').textContent=cfg.title;
   document.getElementById('newNm').placeholder=cfg.ph;
   document.getElementById('newEm').placeholder=cfg.em;
+  document.getElementById('sheetSub').textContent = cfg.protect
+    ? "Rename, reorder (▲▼), add or remove. Removed ones move to the bottom so you can bring them back."
+    : "Rename, reorder (▲▼), add or remove. Removing one that's been logged just hides it — past days keep their record.";
   const list=document.getElementById('editList'); list.innerHTML='';
   const act=L().filter(x=>!x.hidden), hid=L().filter(x=>x.hidden);
   [...act, ...hid].forEach((f,idx)=>{
@@ -761,7 +766,7 @@ function renderEdit(){
     nm.oninput=()=>{f.name=nm.value;save(false)};
     btn.onclick=()=>{
       if(f.hidden){ if(activeCount()>=MAX_FOODS) return; delete f.hidden; }
-      else if(cfg.used(f) || DEFAULT_IDS.has(f.id)){ f.hidden=true; }
+      else if(cfg.used(f) || (cfg.protect && DEFAULT_IDS.has(f.id))){ f.hidden=true; }
       else { state[editMode]=L().filter(x=>x!==f); }
       save(false); renderEdit();
     };
