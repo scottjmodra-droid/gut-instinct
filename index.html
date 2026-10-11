@@ -75,7 +75,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* symptoms */
 .sym{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .sym:first-of-type{border-top:0}
-.sym .lbl{width:78px;font-weight:600;font-size:15px}
+.sym .lbl{width:84px;font-weight:600;font-size:15px}
+.sym.night{background:var(--none-soft);margin:0 -14px;padding:8px 14px;border-radius:10px}
+.sym.night + .sym{border-top:0}
 .sym .lbl .big{font-size:30px;line-height:1}
 .addbtn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:0 14px;height:40px;font-weight:600;flex:none}
 .mv{display:flex;flex-direction:column;gap:2px;flex:none}
@@ -287,8 +289,9 @@ const DEFAULT_FOODS = [
 ];
 const MAX_FOODS = 15;
 const SYMS = [
-  {k:'day',label:'Stomach',sub:'daytime'},
-  {k:'night',label:'Stomach',sub:'night'},
+  // night is logged the morning after, but saved against the previous day (the day the food was eaten)
+  {k:'night',off:-1,label:'🌙 Last night',sub:k=>parseKey(k).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})},
+  {k:'day',label:'☀️ Today',sub:'stomach'},
   {k:'poop',label:'<span class="big" aria-label="Poop">💩</span>',sub:'',none:true}
 ];
 const STOMACH_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'}];
@@ -375,14 +378,17 @@ function renderLog(){
   // symptoms
   const syms=document.getElementById('syms'); syms.innerHTML='';
   SYMS.forEach(s=>{
-    const row=document.createElement('div'); row.className='sym';
-    row.innerHTML=`<div class="lbl">${s.label}${s.sub?`<small>${s.sub}</small>`:''}</div><div class="opts"></div>`;
+    const row=document.createElement('div'); row.className='sym'+(s.off?' night':'');
+    const key = s.off ? addDays(cur,s.off) : cur;
+    const se = entry(key);
+    const sub = typeof s.sub==='function' ? s.sub(key) : s.sub;
+    row.innerHTML=`<div class="lbl">${s.label}${sub?`<small>${sub}</small>`:''}</div><div class="opts"></div>`;
     const opts=row.querySelector('.opts');
     (s.none?POOP_OPTS:STOMACH_OPTS).forEach(o=>{
       const b=document.createElement('button');
-      b.className='opt '+o.v+(e[s.k]===o.v?' on':'');
+      b.className='opt '+o.v+(se[s.k]===o.v?' on':'');
       b.innerHTML=`<span class="e">${o.e}</span><span class="n">${o.n}</span>`;
-      b.onclick=()=>{ const x=entry(cur); x[s.k] = x[s.k]===o.v?null:o.v; setEntry(cur,x); renderLog(); };
+      b.onclick=()=>{ const x=entry(key); x[s.k] = x[s.k]===o.v?null:o.v; setEntry(key,x); renderLog(); };
       opts.appendChild(b);
     });
     syms.appendChild(row);
