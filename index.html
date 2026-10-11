@@ -278,7 +278,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.5 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.6 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -294,7 +294,7 @@ const MAX_FOODS = 15;
 const SYMS = [
   // night is logged the morning after, but saved against the previous day (the day the food was eaten)
   {k:'night',off:-1,label:'🌙 Last night',sub:k=>parseKey(k).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})},
-  {k:'day',label:'☀️ Today',sub:'stomach'},
+  {k:'day',label:'☀️ Today',sub:''},
   {k:'poop',label:'<span class="big" aria-label="Poop">💩</span>',sub:'',none:true}
 ];
 const STOMACH_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'}];
