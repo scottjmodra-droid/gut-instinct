@@ -75,7 +75,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* symptoms */
 .sym{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .sym:first-of-type{border-top:0}
-.sym .lbl{width:84px;font-weight:600;font-size:15px}
+.sym .lbl{width:106px;flex:none;font-weight:600;font-size:14px;white-space:nowrap}
 .sym.night{background:var(--none-soft);margin:0 -14px;padding:8px 14px;border-radius:10px}
 .sym.night + .sym{border-top:0}
 .sym .lbl .big{font-size:30px;line-height:1}
@@ -278,7 +278,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.4 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.5 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
