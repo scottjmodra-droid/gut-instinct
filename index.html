@@ -330,7 +330,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.12 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.13 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -432,7 +432,16 @@ function togglePeriod(k){
   if(r){ if(r.s===k) state.periods=state.periods.filter(x=>x!==r); else r.e=addDays(k,-1); }
   else{
     const next=state.periods.filter(x=>x.s>k).sort((a,b)=>a.s<b.s?-1:1)[0];
-    state.periods.push({s:k, e: next? addDays(next.s,-1) : null});
+    const prev=state.periods.find(x=>x.e===addDays(k,-1));   // a period that ended yesterday
+    if(prev){
+      // undo / continue: re-join yesterday's period instead of starting a new Day 1
+      if(next && next.s===addDays(k,1)){ prev.e=next.e; state.periods=state.periods.filter(x=>x!==next); }
+      else prev.e = next ? addDays(next.s,-1) : null;
+    } else if(next && next.s===addDays(k,1)){
+      next.s=k;   // backfilling the day before a period: extend it backwards
+    } else {
+      state.periods.push({s:k, e: next? addDays(next.s,-1) : null});
+    }
   }
   save();
 }
