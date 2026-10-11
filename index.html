@@ -329,7 +329,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.9 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.10 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -343,7 +343,7 @@ const DEFAULT_FOODS = [
 ];
 const MAX_FOODS = 15;
 const DEFAULT_CIRCS = [
-  {id:'period',name:'Period',emoji:'🩸'},
+  {id:'period',name:'Period',emoji:'📅'},
   {id:'exercise',name:'Exercised',emoji:'🏃‍♀️'},
   {id:'water',name:'Enough water',emoji:'💧'}
 ];
@@ -360,6 +360,7 @@ const FACE = {good:'😊',ok:'😐',bad:'😣',none:'🚫'};
 let state = load();
 if(!state.circs){ state.circs=DEFAULT_CIRCS.map(c=>({...c})); }
 if(!state.periods){ state.periods=[]; }
+{ const p=state.circs.find(c=>c.id==='period'); if(p && p.emoji==='🩸'){ p.emoji='📅'; try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} } }
 if(!state.startedAt){ state.startedAt=Date.now(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} }
 let cur = todayKey();
 
