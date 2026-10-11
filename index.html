@@ -78,6 +78,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .sym .lbl{width:78px;font-weight:600;font-size:15px}
 .sym .lbl .big{font-size:30px;line-height:1}
 .addbtn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:0 14px;height:40px;font-weight:600;flex:none}
+.mv{display:flex;flex-direction:column;gap:2px;flex:none}
+.mv button{width:34px;height:19px;border:1px solid var(--line);background:transparent;border-radius:6px;font-size:9px;line-height:1;padding:0;color:var(--muted)}
+.mv button:disabled{opacity:.25}
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -259,7 +262,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet">
     <div class="card-head"><h2>Edit suspects</h2><button class="linkbtn" id="closeSheet">Done</button></div>
-    <div class="sub" style="margin-bottom:8px">Rename, add or remove. Removing one that's been logged just hides it — past days keep their record.</div>
+    <div class="sub" style="margin-bottom:8px">Rename, reorder (▲▼), add or remove. Removing one that's been logged just hides it — past days keep their record.</div>
     <div id="editList"></div>
     <div class="maxnote" id="maxNote" hidden>That's the max of 15 suspects. Remove one to add another.</div>
     <div class="editrow" id="addRow" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
@@ -523,8 +526,13 @@ function renderEdit(){
   state.foods.forEach(f=>{
     const row=document.createElement('div'); row.className='editrow';
     row.style.opacity=f.hidden?.5:1;
-    row.innerHTML=`<input class="em" maxlength="4" value="${esc(f.emoji||'')}"><input class="nm" value="${esc(f.name)}"><button class="iconbtn" aria-label="${f.hidden?'Restore':'Remove'}">${f.hidden?'↩︎':'✕'}</button>`;
-    const [em,nm,btn]=row.children;
+    row.innerHTML=`<input class="em" maxlength="4" value="${esc(f.emoji||'')}"><input class="nm" value="${esc(f.name)}"><div class="mv"><button aria-label="Move up">▲</button><button aria-label="Move down">▼</button></div><button class="iconbtn" aria-label="${f.hidden?'Restore':'Remove'}">${f.hidden?'↩︎':'✕'}</button>`;
+    const [em,nm,mv,btn]=row.children;
+    const [up,down]=mv.children;
+    const i=state.foods.indexOf(f);
+    up.disabled = i===0; down.disabled = i===state.foods.length-1;
+    const move=d=>{ const j=i+d; [state.foods[i],state.foods[j]]=[state.foods[j],state.foods[i]]; save(false); renderEdit(); };
+    up.onclick=()=>move(-1); down.onclick=()=>move(1);
     em.oninput=()=>{f.emoji=em.value.trim();save(false)};
     nm.oninput=()=>{f.name=nm.value;save(false)};
     btn.onclick=()=>{
