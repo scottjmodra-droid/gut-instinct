@@ -100,6 +100,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .lastbk.stale{color:var(--bad);font-weight:600}
 .chip .d{font-size:11px;color:var(--accent);font-weight:600;line-height:1.1}
 .day .f .cx{font-size:15px;letter-spacing:1px;opacity:.9;margin-left:4px;padding-left:6px;border-left:1px solid var(--line)}
+.removedhd{font-size:12px;color:var(--muted);margin:14px 0 2px;text-transform:uppercase;letter-spacing:.05em}
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -317,7 +318,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet">
     <div class="card-head"><h2 id="sheetTitle">Edit suspects</h2><button class="linkbtn" id="closeSheet">Done</button></div>
-    <div class="sub" style="margin-bottom:8px">Rename, reorder (▲▼), add or remove. Removing one that's been logged just hides it — past days keep their record.</div>
+    <div class="sub" style="margin-bottom:8px">Rename, reorder (▲▼), add or remove. Removed defaults, and anything you've logged, move to the bottom so you can bring them back.</div>
     <div id="editList"></div>
     <div class="maxnote" id="maxNote" hidden>That's the max of 15. Remove one to add another.</div>
     <div class="editrow" id="addRow" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
@@ -329,7 +330,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.10 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.11 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -360,6 +361,14 @@ const FACE = {good:'😊',ok:'😐',bad:'😣',none:'🚫'};
 let state = load();
 if(!state.circs){ state.circs=DEFAULT_CIRCS.map(c=>({...c})); }
 if(!state.periods){ state.periods=[]; }
+const DEFAULT_IDS = new Set([...DEFAULT_FOODS,...DEFAULT_CIRCS].map(x=>x.id));
+// defaults can be removed (hidden) but never lost: bring back any missing ones as hidden
+function ensureDefaults(s){
+  [['foods',DEFAULT_FOODS],['circs',DEFAULT_CIRCS]].forEach(([k,defs])=>{
+    defs.forEach(d=>{ if(!s[k].some(x=>x.id===d.id)) s[k].push({...d,hidden:true}); });
+  });
+}
+ensureDefaults(state);
 { const p=state.circs.find(c=>c.id==='period'); if(p && p.emoji==='🩸'){ p.emoji='📅'; try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} } }
 if(!state.startedAt){ state.startedAt=Date.now(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} }
 let cur = todayKey();
@@ -714,7 +723,7 @@ document.getElementById('restoreFile').onchange=ev=>{
     try{
       const s=JSON.parse(r.result);
       if(!Array.isArray(s.foods)||!s.entries) throw 0;
-      if(confirm('Replace everything on this phone with this backup?')){ s.lastBackup=Date.now(); if(!s.circs) s.circs=DEFAULT_CIRCS.map(c=>({...c})); if(!s.periods) s.periods=[]; state=s; save(false); renderAll(); }
+      if(confirm('Replace everything on this phone with this backup?')){ s.lastBackup=Date.now(); if(!s.circs) s.circs=DEFAULT_CIRCS.map(c=>({...c})); if(!s.periods) s.periods=[]; ensureDefaults(s); state=s; save(false); renderAll(); }
     }catch(e){ alert("That file doesn't look like a Gut Instinct backup."); }
     ev.target.value='';
   };
@@ -735,21 +744,24 @@ function renderEdit(){
   document.getElementById('newNm').placeholder=cfg.ph;
   document.getElementById('newEm').placeholder=cfg.em;
   const list=document.getElementById('editList'); list.innerHTML='';
-  L().forEach(f=>{
+  const act=L().filter(x=>!x.hidden), hid=L().filter(x=>x.hidden);
+  [...act, ...hid].forEach((f,idx)=>{
+    if(idx===act.length && hid.length){ const hd=document.createElement('div'); hd.className='removedhd'; hd.textContent='Removed — tap ↩︎ to bring back'; list.appendChild(hd); }
     const row=document.createElement('div'); row.className='editrow';
     row.style.opacity=f.hidden?.5:1;
     row.innerHTML=`<input class="em" maxlength="4" value="${esc(f.emoji||'')}"><input class="nm" value="${esc(f.name)}"><div class="mv"><button aria-label="Move up">▲</button><button aria-label="Move down">▼</button></div><button class="iconbtn" aria-label="${f.hidden?'Restore':'Remove'}">${f.hidden?'↩︎':'✕'}</button>`;
     const [em,nm,mv,btn]=row.children;
     const [up,down]=mv.children;
-    const arr=L(), i=arr.indexOf(f);
-    up.disabled = i===0; down.disabled = i===arr.length-1;
-    const move=d=>{ const j=i+d; [arr[i],arr[j]]=[arr[j],arr[i]]; save(false); renderEdit(); };
+    const arr=L(), i=arr.indexOf(f), ai=act.indexOf(f);
+    if(f.hidden){ mv.style.visibility='hidden'; }
+    up.disabled = ai<=0; down.disabled = ai<0 || ai===act.length-1;
+    const move=d=>{ const j=arr.indexOf(act[ai+d]); [arr[i],arr[j]]=[arr[j],arr[i]]; save(false); renderEdit(); };
     up.onclick=()=>move(-1); down.onclick=()=>move(1);
     em.oninput=()=>{f.emoji=em.value.trim();save(false)};
     nm.oninput=()=>{f.name=nm.value;save(false)};
     btn.onclick=()=>{
       if(f.hidden){ if(activeCount()>=MAX_FOODS) return; delete f.hidden; }
-      else if(cfg.used(f)){ f.hidden=true; }
+      else if(cfg.used(f) || DEFAULT_IDS.has(f.id)){ f.hidden=true; }
       else { state[editMode]=L().filter(x=>x!==f); }
       save(false); renderEdit();
     };
