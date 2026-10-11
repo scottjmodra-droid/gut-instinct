@@ -34,6 +34,7 @@
   --shadow:0 0 0 1px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.45);
   --nav:#161412;
 }
+[hidden]{display:none!important}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 [data-theme="noir"] body{background:radial-gradient(120% 70% at 50% 0%,#2a2622 0%,var(--bg) 60%) fixed var(--bg)}
@@ -75,6 +76,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .sym{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .sym:first-of-type{border-top:0}
 .sym .lbl{width:78px;font-weight:600;font-size:15px}
+.sym .lbl .big{font-size:30px;line-height:1}
+.addbtn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:0 14px;height:40px;font-weight:600;flex:none}
+.maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
 .opt{flex:1;border:1.5px solid var(--line);background:transparent;border-radius:12px;padding:6px 0;display:flex;flex-direction:column;align-items:center;min-height:56px;justify-content:center}
@@ -160,8 +164,6 @@ nav.tabs button.on .e{filter:none;opacity:1}
 [data-theme="casefile"] .verdict{background:transparent;border:2px solid currentColor;border-radius:4px;font-family:"Special Elite","Courier New",monospace;font-weight:400;transform:rotate(-3deg);padding:2px 8px;letter-spacing:.08em}
 [data-theme="casefile"] .v-na{color:var(--muted)}
 [data-theme="casefile"] .chip.on{box-shadow:inset 0 0 0 1px var(--accent)}
-[data-theme="noir"] .chip .e,[data-theme="noir"] .opt .e,[data-theme="noir"] .day .f{filter:grayscale(1) brightness(1.1);opacity:.75;transition:filter .2s,opacity .2s}
-[data-theme="noir"] .chip.on .e,[data-theme="noir"] .opt.on .e{filter:none;opacity:1}
 [data-theme="noir"] .chip.on{box-shadow:0 0 18px rgba(210,58,48,.25)}
 [data-theme="noir"] .verdict{border-radius:2px;font-family:"Special Elite","Courier New",monospace;font-weight:400;letter-spacing:.1em}
 [data-theme="noir"] .primary{background:var(--accent)}
@@ -193,7 +195,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 
     <div class="card">
       <div class="card-head">
-        <div><h2>Suspects</h2><div class="sub">Tap anything she ate today</div></div>
+        <div><h2>Suspects</h2><div class="sub">Tap anything you ate today</div></div>
         <button class="linkbtn" id="editFoods">Edit</button>
       </div>
       <div class="chips" id="chips"></div>
@@ -223,7 +225,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
   <section id="v-file" class="view">
     <header class="top"><h1>Case file</h1><span class="sub">tap a day to edit</span></header>
     <div class="card">
-      <div class="legend"><span>Day</span><span>Night</span><span>Poop</span></div>
+      <div class="legend"><span>Day</span><span>Night</span><span>💩</span></div>
       <div id="history"></div>
     </div>
     <div class="card">
@@ -259,10 +261,11 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="card-head"><h2>Edit suspects</h2><button class="linkbtn" id="closeSheet">Done</button></div>
     <div class="sub" style="margin-bottom:8px">Rename, add or remove. Removing one that's been logged just hides it — past days keep their record.</div>
     <div id="editList"></div>
-    <div class="editrow" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
+    <div class="maxnote" id="maxNote" hidden>That's the max of 15 suspects. Remove one to add another.</div>
+    <div class="editrow" id="addRow" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
       <input class="em" id="newEm" placeholder="🍽️" maxlength="4">
       <input class="nm" id="newNm" placeholder="New suspect, e.g. Coffee">
-      <button class="iconbtn" id="addFood" aria-label="Add">＋</button>
+      <button class="addbtn" id="addFood">Add</button>
     </div>
   </div>
 </div>
@@ -273,17 +276,20 @@ const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
   {id:'garlic',name:'Garlic',emoji:'🧄'},
   {id:'onion',name:'Onion',emoji:'🧅'},
-  {id:'alcohol',name:'Alcohol',emoji:'🍷'},
   {id:'dairy',name:'Dairy',emoji:'🧀'},
-  {id:'tomato',name:'Tomato',emoji:'🍅'}
+  {id:'tomato',name:'Tomato',emoji:'🍅'},
+  {id:'coffee',name:'Coffee',emoji:'☕'},
+  {id:'redwine',name:'Red wine',emoji:'🍷'},
+  {id:'alcohol',name:'Alcohol',emoji:'🍸'}
 ];
+const MAX_FOODS = 15;
 const SYMS = [
   {k:'day',label:'Stomach',sub:'daytime'},
   {k:'night',label:'Stomach',sub:'night'},
-  {k:'poop',label:'Poop',sub:'',none:true}
+  {k:'poop',label:'<span class="big" aria-label="Poop">💩</span>',sub:'',none:true}
 ];
 const STOMACH_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'}];
-const POOP_OPTS = [{v:'good',e:'💩',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'},{v:'none',e:'🚫',n:'None'}];
+const POOP_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'},{v:'none',e:'🚫',n:'None'}];
 const FACE = {good:'😊',ok:'😐',bad:'😣',none:'🚫'};
 
 let state = load();
@@ -292,9 +298,22 @@ let cur = todayKey();
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(KEY));
-    if(s && Array.isArray(s.foods) && s.entries) return s;
+    if(s && Array.isArray(s.foods) && s.entries) return migrate(s);
   }catch(e){}
-  return {foods:DEFAULT_FOODS.map(f=>({...f})), entries:{}};
+  return {foods:DEFAULT_FOODS.map(f=>({...f})), entries:{}, defaultsV:2};
+}
+// bring older saved lists up to the current defaults (once), without touching her edits
+function migrate(s){
+  if((s.defaultsV||1)>=2) return s;
+  const has=re=>s.foods.some(f=>re.test(f.name)||re.test(f.id));
+  const alc=s.foods.find(f=>f.id==='alcohol');
+  if(alc && alc.emoji==='🍷') alc.emoji='🍸';
+  const active=()=>s.foods.filter(f=>!f.hidden).length;
+  if(!has(/coffee/i) && active()<MAX_FOODS) s.foods.push({id:'coffee',name:'Coffee',emoji:'☕'});
+  if(!has(/red ?wine/i) && active()<MAX_FOODS) s.foods.push({id:'redwine',name:'Red wine',emoji:'🍷'});
+  s.defaultsV=2;
+  try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){}
+  return s;
 }
 let savedTimer;
 function save(flash=true){
@@ -458,8 +477,7 @@ function renderHistory(){
     const cell=v=>`<span class="${v||''}">${v?FACE[v]:''}</span>`;
     b.innerHTML=`<div class="d"><b>${d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</b>${d.toLocaleDateString('en-AU',{weekday:'short'})}</div>
       <div class="f">${foods||'<span class="empty">no suspects</span>'}</div>
-      <div class="s">${cell(e.day)}${cell(e.night)}${cell(e.poop==='good'?'good':e.poop)}</div>`;
-    if(e.poop==='good') b.querySelector('.s span:last-child').textContent='💩';
+      <div class="s">${cell(e.day)}${cell(e.night)}${cell(e.poop)}</div>`;
     b.onclick=()=>{cur=k;show('log')};
     h.appendChild(b);
   });
@@ -511,23 +529,28 @@ function renderEdit(){
     nm.oninput=()=>{f.name=nm.value;save(false)};
     btn.onclick=()=>{
       const used=Object.values(state.entries).some(e=>e.foods.includes(f.id));
-      if(f.hidden){ delete f.hidden; }
+      if(f.hidden){ if(activeFoods().length>=MAX_FOODS) return; delete f.hidden; }
       else if(used){ f.hidden=true; }
       else { state.foods=state.foods.filter(x=>x!==f); }
       save(false); renderEdit();
     };
     list.appendChild(row);
   });
+  const full = activeFoods().length>=MAX_FOODS;
+  document.getElementById('addRow').hidden=full;
+  document.getElementById('maxNote').hidden=!full;
 }
 document.getElementById('addFood').onclick=()=>{
   const nm=document.getElementById('newNm'), em=document.getElementById('newEm');
   const name=nm.value.trim(); if(!name) return nm.focus();
+  if(activeFoods().length>=MAX_FOODS) return;
   state.foods.push({id:'f'+Date.now().toString(36),name,emoji:em.value.trim()||'🍽️'});
   nm.value='';em.value=''; save(false); renderEdit();
 };
 document.getElementById('newNm').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('addFood').click()});
 document.getElementById('editFoods').onclick=()=>{renderEdit();document.getElementById('sheetBg').classList.add('on')};
 function closeSheet(){
+  if(document.getElementById('newNm').value.trim()) document.getElementById('addFood').click();
   state.foods.forEach(f=>{ if(!f.name.trim()) f.name='Unnamed'; });
   save(false);
   document.getElementById('sheetBg').classList.remove('on'); renderLog();
