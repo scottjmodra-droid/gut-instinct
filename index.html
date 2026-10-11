@@ -311,21 +311,21 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="maxnote" id="maxNote" hidden>That's the max of 15 suspects. Remove one to add another.</div>
     <div class="editrow" id="addRow" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
       <input class="em" id="newEm" placeholder="🍽️" maxlength="4">
-      <input class="nm" id="newNm" placeholder="New suspect, e.g. Coffee">
+      <input class="nm" id="newNm" placeholder="New suspect, e.g. Tomato">
       <button class="addbtn" id="addFood">Add</button>
     </div>
   </div>
 </div>
 
 <script>
-const APP_VERSION = 'v1.7 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.8 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
-  {id:'garlic',name:'Garlic',emoji:'🧄'},
-  {id:'onion',name:'Onion',emoji:'🧅'},
   {id:'dairy',name:'Dairy',emoji:'🧀'},
-  {id:'tomato',name:'Tomato',emoji:'🍅'},
+  {id:'onion',name:'Onion',emoji:'🧅'},
+  {id:'garlic',name:'Garlic',emoji:'🧄'},
+  {id:'spicy',name:'Spicy',emoji:'🌶️'},
   {id:'coffee',name:'Coffee',emoji:'☕'},
   {id:'redwine',name:'Red wine',emoji:'🍷'},
   {id:'alcohol',name:'Alcohol',emoji:'🍸'}
