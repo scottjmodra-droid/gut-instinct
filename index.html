@@ -98,6 +98,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .seg button.on{background:var(--accent);color:#fff;font-weight:600}
 .lastbk{font-size:13px;margin-top:8px;color:var(--muted)}
 .lastbk.stale{color:var(--bad);font-weight:600}
+.chip .d{font-size:11px;color:var(--accent);font-weight:600;line-height:1.1}
+.day .f .cx{font-size:15px;letter-spacing:1px;opacity:.9;margin-left:4px;padding-left:6px;border-left:1px solid var(--line)}
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -250,8 +252,16 @@ nav.tabs button.on .e{filter:none;opacity:1}
       <div id="syms"></div>
       <details id="noteWrap" style="margin-top:10px">
         <summary>+ Add a note</summary>
-        <textarea id="note" rows="2" placeholder="Anything else? e.g. ate out, stressed, period…"></textarea>
+        <textarea id="note" rows="2" placeholder="Anything else? e.g. ate out, stressed…"></textarea>
       </details>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Circumstances</h2><div class="sub">Anything else going on today?</div></div>
+        <button class="linkbtn" id="editCircs">Edit</button>
+      </div>
+      <div class="chips" id="circChips"></div>
     </div>
   </section>
 
@@ -263,7 +273,8 @@ nav.tabs button.on .e{filter:none;opacity:1}
     </div>
     <div class="stats" id="stats"></div>
     <div class="card" id="clues"></div>
-    <p class="note" style="padding:0 4px">A <b>rough day</b> = stomach (day or night) or poop rated 😣 bad. Each suspect compares rough days <i>when eaten</i> vs <i>when not</i> — same day, and the day after (reactions can lag). Foods that often travel together (garlic + onion, say) will share the blame; try cutting one at a time to separate them. This spots patterns, not diagnoses.</p>
+    <div class="card" id="cluesCircs" hidden></div>
+    <p class="note" style="padding:0 4px">A <b>rough day</b> = stomach (day or night) or poop rated 😣 bad. <b>Circumstances</b> are checked the same way: an <i>accomplice</i> lines up with more rough days, a <i>good alibi</i> with fewer. Each suspect compares rough days <i>when eaten</i> vs <i>when not</i> — same day, and the day after (reactions can lag). Foods that often travel together (garlic + onion, say) will share the blame; try cutting one at a time to separate them. This spots patterns, not diagnoses.</p>
   </section>
 
   <!-- CASE FILE -->
@@ -305,10 +316,10 @@ nav.tabs button.on .e{filter:none;opacity:1}
 <!-- edit suspects sheet -->
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet">
-    <div class="card-head"><h2>Edit suspects</h2><button class="linkbtn" id="closeSheet">Done</button></div>
+    <div class="card-head"><h2 id="sheetTitle">Edit suspects</h2><button class="linkbtn" id="closeSheet">Done</button></div>
     <div class="sub" style="margin-bottom:8px">Rename, reorder (▲▼), add or remove. Removing one that's been logged just hides it — past days keep their record.</div>
     <div id="editList"></div>
-    <div class="maxnote" id="maxNote" hidden>That's the max of 15 suspects. Remove one to add another.</div>
+    <div class="maxnote" id="maxNote" hidden>That's the max of 15. Remove one to add another.</div>
     <div class="editrow" id="addRow" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
       <input class="em" id="newEm" placeholder="🍽️" maxlength="4">
       <input class="nm" id="newNm" placeholder="New suspect, e.g. Tomato">
@@ -318,7 +329,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.8 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.9 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -331,6 +342,11 @@ const DEFAULT_FOODS = [
   {id:'alcohol',name:'Alcohol',emoji:'🍸'}
 ];
 const MAX_FOODS = 15;
+const DEFAULT_CIRCS = [
+  {id:'period',name:'Period',emoji:'🩸'},
+  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️'},
+  {id:'water',name:'Enough water',emoji:'💧'}
+];
 const SYMS = [
   // night is logged the morning after, but saved against the previous day (the day the food was eaten)
   {k:'night',off:-1,label:'🌙 Last night',sub:k=>parseKey(k).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})},
@@ -342,6 +358,8 @@ const POOP_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad
 const FACE = {good:'😊',ok:'😐',bad:'😣',none:'🚫'};
 
 let state = load();
+if(!state.circs){ state.circs=DEFAULT_CIRCS.map(c=>({...c})); }
+if(!state.periods){ state.periods=[]; }
 if(!state.startedAt){ state.startedAt=Date.now(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} }
 let cur = todayKey();
 
@@ -388,13 +406,25 @@ function niceDate(k){
   return parseKey(k).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'});
 }
 
-function entry(k){ return state.entries[k] || {foods:[],day:null,night:null,poop:null,note:''}; }
+function entry(k){ const e=state.entries[k] || {foods:[],day:null,night:null,poop:null,note:''}; if(!e.circs) e.circs=[]; return e; }
 function setEntry(k,e){
-  const empty = !e.foods.length && !e.day && !e.night && !e.poop && !(e.note||'').trim() && !e.checked;
+  const empty = !e.foods.length && !(e.circs||[]).length && !e.day && !e.night && !e.poop && !(e.note||'').trim() && !e.checked;
   if(empty) delete state.entries[k]; else state.entries[k]=e;
   save();
 }
 const foodById = id => state.foods.find(f=>f.id===id);
+// ---- period: stored as runs {s:start, e:end|null}; an open run stays on until she taps it off
+function periodRun(k){ return state.periods.find(r=> r.s<=k && k<=(r.e||todayKey())); }
+function togglePeriod(k){
+  const r=periodRun(k);
+  if(r){ if(r.s===k) state.periods=state.periods.filter(x=>x!==r); else r.e=addDays(k,-1); }
+  else{
+    const next=state.periods.filter(x=>x.s>k).sort((a,b)=>a.s<b.s?-1:1)[0];
+    state.periods.push({s:k, e: next? addDays(next.s,-1) : null});
+  }
+  save();
+}
+function hasCirc(k,c){ return c.id==='period' ? !!periodRun(k) : (state.entries[k]?.circs||[]).includes(c.id); }
 const activeFoods = () => state.foods.filter(f=>!f.hidden);
 
 // ---- LOG view
@@ -417,6 +447,23 @@ function renderLog(){
       setEntry(cur,x); renderLog();
     };
     chips.appendChild(b);
+  });
+
+  // circumstances
+  const cbox=document.getElementById('circChips'); cbox.innerHTML='';
+  state.circs.filter(c=>!c.hidden || hasCirc(cur,c)).forEach(c=>{
+    const on=hasCirc(cur,c);
+    const b=document.createElement('button');
+    b.className='chip'+(on?' on':'');
+    let extra='';
+    if(c.id==='period' && on){ const r=periodRun(cur); const d=Math.round((parseKey(cur)-parseKey(r.s))/86400000)+1; extra=`<span class="d">Day ${d} · tap when ended</span>`; }
+    b.innerHTML=`<span class="e">${esc(c.emoji||'📌')}</span><span class="n">${esc(c.name)}</span>${extra}`;
+    b.onclick=()=>{
+      if(c.id==='period'){ togglePeriod(cur); }
+      else{ const x=entry(cur); const i=x.circs.indexOf(c.id); if(i>=0) x.circs.splice(i,1); else x.circs.push(c.id); setEntry(cur,x); }
+      renderLog();
+    };
+    cbox.appendChild(b);
   });
 
   // symptoms
@@ -513,6 +560,7 @@ function renderClues(){
 
   const box=document.getElementById('clues');
   if(withSym.length<3){
+    document.getElementById('cluesCircs').hidden=true;
     box.innerHTML=`<div class="sub" style="text-align:center;padding:20px 0">🕵️ Not enough evidence yet.<br>Log a few more days and the suspects will start to show their hand.</div>`;
     return;
   }
@@ -563,6 +611,36 @@ function renderClues(){
         <span>after not</span>${bar(r.nwo,'wo')}<span class="pct">${pct(r.nwo)}</span>
       </div>`:''}
     </div>`).join('');
+
+  // circumstances: same-day comparison
+  const cbox=document.getElementById('cluesCircs');
+  const crow = state.circs.map(c=>{
+    const W=withSym.filter(k=>hasCirc(k,c)).map(k=>state.entries[k]);
+    const Wo=withSym.filter(k=>!hasCirc(k,c)).map(k=>state.entries[k]);
+    const sw=rate(W), swo=rate(Wo), n=W.length;
+    const d = sw!=null&&swo!=null ? sw-swo : 0;
+    let v;
+    if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:0};
+    else if(Wo.length<MIN) v={c:'v-na',t:'Every day',o:0,why:'Ticked nearly every day, so there\'s nothing to compare against yet.'};
+    else if(d>=0.10) v={c:'v-prime',t:'Accomplice',o:3};
+    else if(d<=-0.10) v={c:'v-inn',t:'Good alibi',o:2};
+    else v={c:'v-na',t:'No clear effect',o:1};
+    return {c,n,sw,swo,v,d,used:n>0};
+  }).filter(r=>r.used || !r.c.hidden);
+  crow.sort((a,b)=> b.v.o-a.v.o || Math.abs(b.d)-Math.abs(a.d));
+  cbox.hidden = !crow.length;
+  cbox.innerHTML = `<h2 style="margin-bottom:10px">Circumstances</h2>` + crow.map(r=>`
+    <div class="suspect">
+      <div class="row1">
+        <span class="name">${esc(r.c.emoji||'📌')} ${esc(r.c.name)} <span class="hidden-tag">· ${r.n} day${r.n===1?'':'s'}</span></span>
+        <span class="verdict ${r.v.c}">${r.v.t}</span>
+      </div>
+      ${r.v.why? `<p class="note" style="margin:0 0 8px">${r.v.why}</p>`:''}
+      ${r.n? `<div class="bars">
+        <span>on those days</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
+        <span>other days</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
+      </div>`:''}
+    </div>`).join('');
 }
 
 // ---- CASE FILE
@@ -576,9 +654,10 @@ function renderHistory(){
     const e=state.entries[k]; const d=parseKey(k);
     const b=document.createElement('button'); b.className='day';
     const foods=e.foods.map(id=>foodById(id)).filter(Boolean).map(f=>esc(f.emoji||'🍽️')).join('');
+    const cx=state.circs.filter(c=>hasCirc(k,c)).map(c=>esc(c.emoji||'📌')).join('');
     const cell=v=>`<span class="${v||''}">${v?FACE[v]:''}</span>`;
     b.innerHTML=`<div class="d"><b>${d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</b>${d.toLocaleDateString('en-AU',{weekday:'short'})}</div>
-      <div class="f">${foods||'<span class="empty">no suspects</span>'}</div>
+      <div class="f">${foods||'<span class="empty">no suspects</span>'}${cx?`<span class="cx">${cx}</span>`:''}</div>
       <div class="s">${cell(e.day)}${cell(e.night)}${cell(e.poop)}</div>`;
     b.onclick=()=>{cur=k;show('log')};
     h.appendChild(b);
@@ -606,11 +685,12 @@ function download(name,text,type){
 function csvCell(s){ s=String(s??''); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
 document.getElementById('csvBtn').onclick=()=>{
   const foods=state.foods.filter(f=>!f.hidden || Object.values(state.entries).some(e=>e.foods.includes(f.id)));
-  const head=['date',...foods.map(f=>f.name),'stomach_day','stomach_night','poop','note'];
+  const circs=state.circs;
+  const head=['date',...foods.map(f=>f.name),...circs.map(c=>c.name),'stomach_day','stomach_night','poop','note'];
   const lines=[head.map(csvCell).join(',')];
   Object.keys(state.entries).sort().forEach(k=>{
     const e=state.entries[k];
-    lines.push([k,...foods.map(f=>e.foods.includes(f.id)?1:0),e.day||'',e.night||'',e.poop||'',e.note||''].map(csvCell).join(','));
+    lines.push([k,...foods.map(f=>e.foods.includes(f.id)?1:0),...circs.map(c=>hasCirc(k,c)?1:0),e.day||'',e.night||'',e.poop||'',e.note||''].map(csvCell).join(','));
   });
   saveFile(`gut-instinct-${todayKey()}.csv`,lines.join('\n'),'text/csv');
 };
@@ -633,53 +713,65 @@ document.getElementById('restoreFile').onchange=ev=>{
     try{
       const s=JSON.parse(r.result);
       if(!Array.isArray(s.foods)||!s.entries) throw 0;
-      if(confirm('Replace everything on this phone with this backup?')){ s.lastBackup=Date.now(); state=s; save(false); renderAll(); }
+      if(confirm('Replace everything on this phone with this backup?')){ s.lastBackup=Date.now(); if(!s.circs) s.circs=DEFAULT_CIRCS.map(c=>({...c})); if(!s.periods) s.periods=[]; state=s; save(false); renderAll(); }
     }catch(e){ alert("That file doesn't look like a Gut Instinct backup."); }
     ev.target.value='';
   };
   r.readAsText(f);
 };
 
-// ---- edit suspects
+// ---- edit sheet (suspects or circumstances)
+let editMode='foods';
+const EDIT = {
+  foods:{title:'Edit suspects', ph:'New suspect, e.g. Tomato', em:'🍽️', used:f=>Object.values(state.entries).some(e=>e.foods.includes(f.id))},
+  circs:{title:'Edit circumstances', ph:'e.g. Stressed, Slept badly', em:'📌', used:c=> c.id==='period' ? state.periods.length>0 : Object.values(state.entries).some(e=>(e.circs||[]).includes(c.id))}
+};
+const L = () => state[editMode];
+const activeCount = () => L().filter(x=>!x.hidden).length;
 function renderEdit(){
+  const cfg=EDIT[editMode];
+  document.getElementById('sheetTitle').textContent=cfg.title;
+  document.getElementById('newNm').placeholder=cfg.ph;
+  document.getElementById('newEm').placeholder=cfg.em;
   const list=document.getElementById('editList'); list.innerHTML='';
-  state.foods.forEach(f=>{
+  L().forEach(f=>{
     const row=document.createElement('div'); row.className='editrow';
     row.style.opacity=f.hidden?.5:1;
     row.innerHTML=`<input class="em" maxlength="4" value="${esc(f.emoji||'')}"><input class="nm" value="${esc(f.name)}"><div class="mv"><button aria-label="Move up">▲</button><button aria-label="Move down">▼</button></div><button class="iconbtn" aria-label="${f.hidden?'Restore':'Remove'}">${f.hidden?'↩︎':'✕'}</button>`;
     const [em,nm,mv,btn]=row.children;
     const [up,down]=mv.children;
-    const i=state.foods.indexOf(f);
-    up.disabled = i===0; down.disabled = i===state.foods.length-1;
-    const move=d=>{ const j=i+d; [state.foods[i],state.foods[j]]=[state.foods[j],state.foods[i]]; save(false); renderEdit(); };
+    const arr=L(), i=arr.indexOf(f);
+    up.disabled = i===0; down.disabled = i===arr.length-1;
+    const move=d=>{ const j=i+d; [arr[i],arr[j]]=[arr[j],arr[i]]; save(false); renderEdit(); };
     up.onclick=()=>move(-1); down.onclick=()=>move(1);
     em.oninput=()=>{f.emoji=em.value.trim();save(false)};
     nm.oninput=()=>{f.name=nm.value;save(false)};
     btn.onclick=()=>{
-      const used=Object.values(state.entries).some(e=>e.foods.includes(f.id));
-      if(f.hidden){ if(activeFoods().length>=MAX_FOODS) return; delete f.hidden; }
-      else if(used){ f.hidden=true; }
-      else { state.foods=state.foods.filter(x=>x!==f); }
+      if(f.hidden){ if(activeCount()>=MAX_FOODS) return; delete f.hidden; }
+      else if(cfg.used(f)){ f.hidden=true; }
+      else { state[editMode]=L().filter(x=>x!==f); }
       save(false); renderEdit();
     };
     list.appendChild(row);
   });
-  const full = activeFoods().length>=MAX_FOODS;
+  const full = activeCount()>=MAX_FOODS;
   document.getElementById('addRow').hidden=full;
   document.getElementById('maxNote').hidden=!full;
 }
 document.getElementById('addFood').onclick=()=>{
   const nm=document.getElementById('newNm'), em=document.getElementById('newEm');
   const name=nm.value.trim(); if(!name) return nm.focus();
-  if(activeFoods().length>=MAX_FOODS) return;
-  state.foods.push({id:'f'+Date.now().toString(36),name,emoji:em.value.trim()||'🍽️'});
+  if(activeCount()>=MAX_FOODS) return;
+  L().push({id:(editMode==='circs'?'c':'f')+Date.now().toString(36),name,emoji:em.value.trim()||EDIT[editMode].em});
   nm.value='';em.value=''; save(false); renderEdit();
 };
 document.getElementById('newNm').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('addFood').click()});
-document.getElementById('editFoods').onclick=()=>{renderEdit();document.getElementById('sheetBg').classList.add('on')};
+function openSheet(mode){ editMode=mode; document.getElementById('newNm').value=''; document.getElementById('newEm').value=''; renderEdit(); document.getElementById('sheetBg').classList.add('on'); }
+document.getElementById('editFoods').onclick=()=>openSheet('foods');
+document.getElementById('editCircs').onclick=()=>openSheet('circs');
 function closeSheet(){
   if(document.getElementById('newNm').value.trim()) document.getElementById('addFood').click();
-  state.foods.forEach(f=>{ if(!f.name.trim()) f.name='Unnamed'; });
+  L().forEach(f=>{ if(!f.name.trim()) f.name='Unnamed'; });
   save(false);
   document.getElementById('sheetBg').classList.remove('on'); renderLog();
 }
