@@ -83,6 +83,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .mv{display:flex;flex-direction:column;gap:2px;flex:none}
 .mv button{width:34px;height:19px;border:1px solid var(--line);background:transparent;border-radius:6px;font-size:9px;line-height:1;padding:0;color:var(--muted)}
 .mv button:disabled{opacity:.25}
+.ver{text-align:center;font-size:10px;color:var(--muted);opacity:.7;padding:8px 0 0;letter-spacing:.04em}
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -252,6 +253,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
       <input type="file" id="restoreFile" accept=".json,application/json" hidden>
     </div>
   </section>
+  <div class="ver" id="ver"></div>
 </div>
 
 <nav class="tabs"><div class="in">
@@ -276,6 +278,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
+const APP_VERSION = 'v1.4 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -600,6 +603,7 @@ function applyTheme(t){
 let savedTheme; try{savedTheme=localStorage.getItem(THEME_KEY)}catch(e){}
 applyTheme(savedTheme||'casefile');
 document.querySelectorAll('.themepick').forEach(b=>b.onclick=()=>{applyTheme(b.dataset.t);try{localStorage.setItem(THEME_KEY,b.dataset.t)}catch(e){}});
+document.getElementById('ver').textContent = 'Gut Instinct ' + APP_VERSION;
 renderLog();
 </script>
 </body>
