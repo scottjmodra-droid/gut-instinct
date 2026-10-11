@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en" data-theme="casefile">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gut Instinct">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#e8dcbc">
+<title>Gut Instinct</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+[data-theme="casefile"]{
+  --bg:#e8dcbc; --bg2:#dfd0a8; --card:#f8f1dd; --ink:#2d2a24; --muted:#7a6d55; --line:#d3c39b;
+  --accent:#a8322a; --accent-soft:#f1d9cc;
+  --good:#4e7a3e; --good-soft:#e1e8cc;
+  --ok:#a8781c; --ok-soft:#f1e3bb;
+  --bad:#a8322a; --bad-soft:#f1d4c8;
+  --none:#7a6d55; --none-soft:#e9dfc5;
+  --shadow:0 1px 0 rgba(90,70,30,.12),0 3px 10px rgba(90,70,30,.10);
+  --nav:#f3e9cf;
+}
+[data-theme="noir"]{
+  --bg:#121110; --bg2:#1d1b19; --card:#1c1a18; --ink:#ece6da; --muted:#8c857a; --line:#34302b;
+  --accent:#d23a30; --accent-soft:#3a1a17;
+  --good:#8fb187; --good-soft:#1f2a1e;
+  --ok:#d2b25a; --ok-soft:#2e2818;
+  --bad:#e0483c; --bad-soft:#3a1a17;
+  --none:#8c857a; --none-soft:#26231f;
+  --shadow:0 0 0 1px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.45);
+  --nav:#161412;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+[data-theme="noir"] body{background:radial-gradient(120% 70% at 50% 0%,#2a2622 0%,var(--bg) 60%) fixed var(--bg)}
+[data-theme="casefile"] body{background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(120,95,40,.035) 3px 4px) var(--bg)}
+body{font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+.wrap{max-width:560px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px 16px}
+h1,h2,.stat b,.datelabel b{font-family:"Special Elite","Courier New",monospace;font-weight:400}
+h1{font-size:28px;margin:0;display:flex;align-items:center;gap:8px}
+h1 img{width:30px;height:30px;border-radius:7px}
+h2{font-size:20px;margin:0}
+[data-theme="noir"] h1,[data-theme="noir"] h2{text-transform:uppercase;letter-spacing:.06em}
+[data-theme="noir"] h1{font-size:24px}
+.sub{color:var(--muted);font-size:13px}
+header.top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0;box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.card-head .sub{margin-top:2px}
+button{font:inherit;color:inherit;cursor:pointer}
+.linkbtn{background:none;border:0;color:var(--accent);font-size:14px;font-weight:600;padding:6px}
+
+/* date nav */
+.datenav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.datenav button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:20px}
+.datenav button:disabled{opacity:.3}
+.datelabel{text-align:center;flex:1}
+.datelabel b{display:block;font-size:17px}
+.saved{color:var(--good);font-size:12px;height:16px;transition:opacity .4s}
+
+/* suspects */
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.chip{border:1.5px solid var(--line);background:transparent;border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:72px;transition:all .12s}
+.chip .e{font-size:26px;line-height:1.1}
+.chip .n{font-size:13px;color:var(--muted)}
+.chip.on{border-color:var(--accent);background:var(--accent-soft)}
+.chip.on .n{color:var(--ink);font-weight:600}
+.chip:active{transform:scale(.97)}
+
+/* symptoms */
+.sym{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.sym:first-of-type{border-top:0}
+.sym .lbl{width:78px;font-weight:600;font-size:15px}
+.sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.opts{display:flex;gap:6px;flex:1}
+.opt{flex:1;border:1.5px solid var(--line);background:transparent;border-radius:12px;padding:6px 0;display:flex;flex-direction:column;align-items:center;min-height:56px;justify-content:center}
+.opt .e{font-size:22px;line-height:1.1}
+.opt .n{font-size:11px;color:var(--muted)}
+.opt.on.good{background:var(--good-soft);border-color:var(--good)}
+.opt.on.ok{background:var(--ok-soft);border-color:var(--ok)}
+.opt.on.bad{background:var(--bad-soft);border-color:var(--bad)}
+.opt.on.none{background:var(--none-soft);border-color:var(--none)}
+.opt.on .n{color:var(--ink);font-weight:600}
+
+textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);font:inherit;font-size:15px;padding:10px;resize:vertical;min-height:44px}
+details summary{cursor:pointer;color:var(--muted);font-size:14px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details[open] summary{margin-bottom:8px}
+
+/* insights */
+.verdict{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:999px}
+.v-prime{background:var(--bad-soft);color:var(--bad)}
+.v-poi{background:var(--ok-soft);color:var(--ok)}
+.v-inn{background:var(--good-soft);color:var(--good)}
+.v-na{background:var(--none-soft);color:var(--muted)}
+.suspect{padding:12px 0;border-top:1px solid var(--line)}
+.suspect:first-child{border-top:0;padding-top:2px}
+.suspect .row1{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.suspect .name{font-weight:600;font-size:16px}
+.bars{display:grid;grid-template-columns:96px 1fr 40px;gap:4px 8px;align-items:center;font-size:12px;color:var(--muted)}
+.bar{height:10px;border-radius:5px;background:var(--none-soft);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px}
+.bar i.w{background:var(--bad)}
+.bar i.wo{background:var(--muted);opacity:.55}
+.pct{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+.bars .grp{grid-column:1/-1;font-weight:600;color:var(--ink);margin-top:6px;font-size:12px}
+.note{font-size:13px;color:var(--muted);margin:6px 0 0}
+.stats{display:flex;gap:8px}
+.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.stat b{display:block;font-size:22px;font-family:ui-serif,Georgia,serif}
+.stat span{font-size:12px;color:var(--muted)}
+
+/* history */
+.day{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left}
+.day:first-child{border-top:0}
+.day .d{width:62px;font-size:13px;color:var(--muted)}
+.day .d b{display:block;color:var(--ink);font-size:15px}
+.day .f{flex:1;font-size:20px;letter-spacing:2px;min-height:24px}
+.day .f .empty{font-size:12px;color:var(--muted);letter-spacing:0}
+.day .s{display:flex;gap:3px;font-size:18px}
+.day .s span{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--none-soft)}
+.day .s span.good{background:var(--good-soft)}
+.day .s span.ok{background:var(--ok-soft)}
+.day .s span.bad{background:var(--bad-soft)}
+.legend{display:flex;justify-content:flex-end;gap:3px;font-size:10px;color:var(--muted);margin-bottom:4px}
+.legend span{width:28px;text-align:center}
+
+/* edit list */
+.editrow{display:flex;gap:8px;align-items:center;padding:6px 0}
+.editrow input{border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit;padding:9px 10px;min-width:0}
+.editrow input.em{width:52px;text-align:center;font-size:20px;padding:6px}
+.editrow input.nm{flex:1}
+.iconbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;font-size:16px;flex:none}
+.primary{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:12px 16px;font-weight:600;width:100%}
+.secondary{background:transparent;border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-weight:600;width:100%}
+.btnrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.hidden-tag{font-size:11px;color:var(--muted)}
+
+/* tabs */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--nav);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav.tabs .in{display:flex;max-width:560px;width:100%}
+nav.tabs button{flex:1;background:none;border:0;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font-size:12px}
+nav.tabs button .e{font-size:22px;filter:grayscale(1);opacity:.6}
+nav.tabs button.on{color:var(--accent);font-weight:600}
+nav.tabs button.on .e{filter:none;opacity:1}
+.view{display:none}.view.on{display:block}
+
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:10;align-items:flex-end;justify-content:center}
+.sheet-bg.on{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
+
+/* --- theme flourishes --- */
+[data-theme="casefile"] .card{border-radius:4px 14px 14px 14px;position:relative;margin-top:22px}
+[data-theme="casefile"] .card::before{content:"";position:absolute;left:-1px;top:-14px;width:96px;height:14px;background:var(--card);border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0}
+[data-theme="casefile"] .verdict{background:transparent;border:2px solid currentColor;border-radius:4px;font-family:"Special Elite","Courier New",monospace;font-weight:400;transform:rotate(-3deg);padding:2px 8px;letter-spacing:.08em}
+[data-theme="casefile"] .v-na{color:var(--muted)}
+[data-theme="casefile"] .chip.on{box-shadow:inset 0 0 0 1px var(--accent)}
+[data-theme="noir"] .chip .e,[data-theme="noir"] .opt .e,[data-theme="noir"] .day .f{filter:grayscale(1) brightness(1.1);opacity:.75;transition:filter .2s,opacity .2s}
+[data-theme="noir"] .chip.on .e,[data-theme="noir"] .opt.on .e{filter:none;opacity:1}
+[data-theme="noir"] .chip.on{box-shadow:0 0 18px rgba(210,58,48,.25)}
+[data-theme="noir"] .verdict{border-radius:2px;font-family:"Special Elite","Courier New",monospace;font-weight:400;letter-spacing:.1em}
+[data-theme="noir"] .primary{background:var(--accent)}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.themepick{border:2px solid var(--line);border-radius:12px;padding:0;overflow:hidden;background:none;text-align:left}
+.themepick.on{border-color:var(--accent)}
+.themepick .sw{height:64px;display:flex;align-items:center;justify-content:center;font-family:"Special Elite","Courier New",monospace;font-size:15px}
+.themepick .lb{display:block;padding:8px 10px;font-size:13px;font-weight:600}
+.sw.noir{background:radial-gradient(circle at 50% 30%,#2a2622,#121110);color:#ece6da;letter-spacing:.1em;text-transform:uppercase}
+.sw.noir span{color:#d23a30}
+.sw.casefile{background:#e8dcbc;color:#2d2a24}
+.sw.casefile span{border:2px solid #a8322a;color:#a8322a;padding:0 6px;transform:rotate(-4deg);margin-left:6px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- LOG -->
+  <section id="v-log" class="view on">
+    <header class="top"><h1><img src="icon.svg" alt="">Gut Instinct</h1><span class="sub" id="streak"></span></header>
+
+    <div class="card">
+      <div class="datenav">
+        <button id="prev" aria-label="Previous day">‹</button>
+        <div class="datelabel"><b id="dlabel"></b><span class="saved" id="saved"></span></div>
+        <button id="next" aria-label="Next day">›</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Suspects</h2><div class="sub">Tap anything she ate today</div></div>
+        <button class="linkbtn" id="editFoods">Edit</button>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><h2>Symptoms</h2><div class="sub">Tap again to clear</div></div>
+      </div>
+      <div id="syms"></div>
+      <details id="noteWrap" style="margin-top:10px">
+        <summary>+ Add a note</summary>
+        <textarea id="note" rows="2" placeholder="Anything else? e.g. ate out, stressed, period…"></textarea>
+      </details>
+    </div>
+  </section>
+
+  <!-- CLUES -->
+  <section id="v-clues" class="view">
+    <header class="top"><h1>Clues</h1><span class="sub">who's the culprit?</span></header>
+    <div class="stats" id="stats"></div>
+    <div class="card" id="clues"></div>
+    <p class="note" style="padding:0 4px">A <b>rough day</b> = stomach (day or night) or poop rated 😣 bad. Each suspect compares rough days <i>when eaten</i> vs <i>when not</i> — same day, and the day after (reactions can lag). Foods that often travel together (garlic + onion, say) will share the blame; try cutting one at a time to separate them. This spots patterns, not diagnoses.</p>
+  </section>
+
+  <!-- CASE FILE -->
+  <section id="v-file" class="view">
+    <header class="top"><h1>Case file</h1><span class="sub">tap a day to edit</span></header>
+    <div class="card">
+      <div class="legend"><span>Day</span><span>Night</span><span>Poop</span></div>
+      <div id="history"></div>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:4px">The look</h2>
+      <div class="sub">Pick the vibe for the investigation.</div>
+      <div class="themes">
+        <button class="themepick" data-t="casefile"><div class="sw casefile">Case file <span>OPEN</span></div><span class="lb">Vintage case file</span></button>
+        <button class="themepick" data-t="noir"><div class="sw noir">Gut <span>&nbsp;Instinct</span></div><span class="lb">Film noir</span></button>
+      </div>
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:4px">Export &amp; backup</h2>
+      <div class="sub">Data lives only on this phone. Back it up now and then, or send the CSV to a GP / dietitian.</div>
+      <button class="primary" id="csvBtn" style="margin-top:12px">Export CSV</button>
+      <div class="btnrow">
+        <button class="secondary" id="backupBtn">Backup file</button>
+        <button class="secondary" id="restoreBtn">Restore</button>
+      </div>
+      <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs"><div class="in">
+  <button data-v="log" class="on"><span class="e">📝</span>Log</button>
+  <button data-v="clues"><span class="e">🔍</span>Clues</button>
+  <button data-v="file"><span class="e">🗂️</span>Case file</button>
+</div></nav>
+
+<!-- edit suspects sheet -->
+<div class="sheet-bg" id="sheetBg">
+  <div class="sheet">
+    <div class="card-head"><h2>Edit suspects</h2><button class="linkbtn" id="closeSheet">Done</button></div>
+    <div class="sub" style="margin-bottom:8px">Rename, add or remove. Removing one that's been logged just hides it — past days keep their record.</div>
+    <div id="editList"></div>
+    <div class="editrow" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
+      <input class="em" id="newEm" placeholder="🍽️" maxlength="4">
+      <input class="nm" id="newNm" placeholder="New suspect, e.g. Coffee">
+      <button class="iconbtn" id="addFood" aria-label="Add">＋</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const KEY = 'gutcheck_v1';
+const DEFAULT_FOODS = [
+  {id:'gluten',name:'Gluten',emoji:'🍞'},
+  {id:'garlic',name:'Garlic',emoji:'🧄'},
+  {id:'onion',name:'Onion',emoji:'🧅'},
+  {id:'alcohol',name:'Alcohol',emoji:'🍷'},
+  {id:'dairy',name:'Dairy',emoji:'🧀'},
+  {id:'tomato',name:'Tomato',emoji:'🍅'}
+];
+const SYMS = [
+  {k:'day',label:'Stomach',sub:'daytime'},
+  {k:'night',label:'Stomach',sub:'night'},
+  {k:'poop',label:'Poop',sub:'',none:true}
+];
+const STOMACH_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'}];
+const POOP_OPTS = [{v:'good',e:'💩',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'},{v:'none',e:'🚫',n:'None'}];
+const FACE = {good:'😊',ok:'😐',bad:'😣',none:'🚫'};
+
+let state = load();
+let cur = todayKey();
+
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if(s && Array.isArray(s.foods) && s.entries) return s;
+  }catch(e){}
+  return {foods:DEFAULT_FOODS.map(f=>({...f})), entries:{}};
+}
+let savedTimer;
+function save(flash=true){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+  if(flash){
+    const el = document.getElementById('saved');
+    el.textContent='✓ saved'; el.style.opacity=1;
+    clearTimeout(savedTimer); savedTimer=setTimeout(()=>el.style.opacity=0,1200);
+  }
+}
+
+// ---- dates
+function pad(n){return String(n).padStart(2,'0')}
+function keyOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function todayKey(){return keyOf(new Date())}
+function parseKey(k){const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
+function addDays(k,n){const d=parseKey(k);d.setDate(d.getDate()+n);return keyOf(d)}
+function niceDate(k){
+  const t=todayKey();
+  if(k===t) return 'Today';
+  if(k===addDays(t,-1)) return 'Yesterday';
+  return parseKey(k).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'});
+}
+
+function entry(k){ return state.entries[k] || {foods:[],day:null,night:null,poop:null,note:''}; }
+function setEntry(k,e){
+  const empty = !e.foods.length && !e.day && !e.night && !e.poop && !(e.note||'').trim();
+  if(empty) delete state.entries[k]; else state.entries[k]=e;
+  save();
+}
+const foodById = id => state.foods.find(f=>f.id===id);
+const activeFoods = () => state.foods.filter(f=>!f.hidden);
+
+// ---- LOG view
+function renderLog(){
+  document.getElementById('dlabel').textContent = niceDate(cur);
+  document.getElementById('next').disabled = cur>=todayKey();
+  const e = entry(cur);
+
+  // suspects (show active foods + any hidden ones ticked on this day)
+  const show = state.foods.filter(f=>!f.hidden || e.foods.includes(f.id));
+  const chips = document.getElementById('chips');
+  chips.innerHTML='';
+  show.forEach(f=>{
+    const b=document.createElement('button');
+    b.className='chip'+(e.foods.includes(f.id)?' on':'');
+    b.innerHTML=`<span class="e">${esc(f.emoji||'🍽️')}</span><span class="n">${esc(f.name)}</span>`;
+    b.onclick=()=>{
+      const x=entry(cur); const i=x.foods.indexOf(f.id);
+      if(i>=0) x.foods.splice(i,1); else x.foods.push(f.id);
+      setEntry(cur,x); renderLog();
+    };
+    chips.appendChild(b);
+  });
+
+  // symptoms
+  const syms=document.getElementById('syms'); syms.innerHTML='';
+  SYMS.forEach(s=>{
+    const row=document.createElement('div'); row.className='sym';
+    row.innerHTML=`<div class="lbl">${s.label}${s.sub?`<small>${s.sub}</small>`:''}</div><div class="opts"></div>`;
+    const opts=row.querySelector('.opts');
+    (s.none?POOP_OPTS:STOMACH_OPTS).forEach(o=>{
+      const b=document.createElement('button');
+      b.className='opt '+o.v+(e[s.k]===o.v?' on':'');
+      b.innerHTML=`<span class="e">${o.e}</span><span class="n">${o.n}</span>`;
+      b.onclick=()=>{ const x=entry(cur); x[s.k] = x[s.k]===o.v?null:o.v; setEntry(cur,x); renderLog(); };
+      opts.appendChild(b);
+    });
+    syms.appendChild(row);
+  });
+
+  const note=document.getElementById('note');
+  note.value=e.note||'';
+  document.getElementById('noteWrap').open = !!(e.note||'').trim();
+
+  const n=Object.keys(state.entries).length;
+  document.getElementById('streak').textContent = n? `${n} day${n>1?'s':''} logged` : '';
+}
+document.getElementById('note').addEventListener('input',ev=>{
+  const x=entry(cur); x.note=ev.target.value; setEntry(cur,x);
+});
+document.getElementById('prev').onclick=()=>{cur=addDays(cur,-1);renderLog()};
+document.getElementById('next').onclick=()=>{if(cur<todayKey()){cur=addDays(cur,1);renderLog()}};
+
+// ---- CLUES
+function rough(e){ return e.day==='bad'||e.night==='bad'||e.poop==='bad'; }
+function hasSym(e){ return !!(e && (e.day||e.night||e.poop)); }
+function rate(list){ return list.length? list.filter(rough).length/list.length : null; }
+
+function renderClues(){
+  const keys=Object.keys(state.entries).sort();
+  const withSym=keys.filter(k=>hasSym(state.entries[k]));
+  const roughN=withSym.filter(k=>rough(state.entries[k])).length;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><b>${withSym.length}</b><span>days logged</span></div>
+    <div class="stat"><b>${roughN}</b><span>rough days</span></div>
+    <div class="stat"><b>${withSym.length?Math.round(roughN/withSym.length*100)+'%':'–'}</b><span>rough-day rate</span></div>`;
+
+  const box=document.getElementById('clues');
+  if(withSym.length<3){
+    box.innerHTML=`<div class="sub" style="text-align:center;padding:20px 0">🕵️ Not enough evidence yet.<br>Log a few more days and the suspects will start to show their hand.</div>`;
+    return;
+  }
+
+  const MIN=3;
+  const rows = state.foods.map(f=>{
+    const ate=k=>state.entries[k].foods.includes(f.id);
+    const sameW=withSym.filter(ate).map(k=>state.entries[k]);
+    const sameWo=withSym.filter(k=>!ate(k)).map(k=>state.entries[k]);
+    // next day: pairs where both today logged (for food) and tomorrow has symptoms
+    const nW=[],nWo=[];
+    keys.forEach(k=>{
+      const nx=state.entries[addDays(k,1)];
+      if(!hasSym(nx)) return;
+      (ate(k)?nW:nWo).push(nx);
+    });
+    const sw=rate(sameW), swo=rate(sameWo), nw=rate(nW), nwo=rate(nWo);
+    const d1 = sw!=null&&swo!=null? sw-swo : null;
+    const d2 = nw!=null&&nwo!=null? nw-nwo : null;
+    const n = sameW.length;
+    const best = Math.max(d1??-9, d2??-9);
+    let v;
+    if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:1};
+    else if(best>=0.25) v={c:'v-prime',t:'Prime suspect',o:4};
+    else if(best>=0.10) v={c:'v-poi',t:'Person of interest',o:3};
+    else v={c:'v-inn',t:'Looks innocent',o:2};
+    return {f,n,sw,swo,nw,nwo,v,best,used:n>0};
+  }).filter(r=>r.used || !r.f.hidden);
+
+  rows.sort((a,b)=> b.v.o-a.v.o || b.best-a.best || b.n-a.n);
+
+  const pct=x=>x==null?'–':Math.round(x*100)+'%';
+  const bar=(x,cls)=>`<div class="bar"><i class="${cls}" style="width:${x==null?0:Math.max(2,x*100)}%"></i></div>`;
+  box.innerHTML = rows.map(r=>`
+    <div class="suspect">
+      <div class="row1">
+        <span class="name">${esc(r.f.emoji||'🍽️')} ${esc(r.f.name)} <span class="hidden-tag">· eaten ${r.n} day${r.n===1?'':'s'}</span></span>
+        <span class="verdict ${r.v.c}">${r.v.t}</span>
+      </div>
+      ${r.n? `<div class="bars">
+        <div class="grp">Rough same day</div>
+        <span>when eaten</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
+        <span>when not</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
+        <div class="grp">Rough next day</div>
+        <span>after eating</span>${bar(r.nw,'w')}<span class="pct">${pct(r.nw)}</span>
+        <span>after not</span>${bar(r.nwo,'wo')}<span class="pct">${pct(r.nwo)}</span>
+      </div>`:''}
+    </div>`).join('');
+}
+
+// ---- CASE FILE
+function renderHistory(){
+  const keys=Object.keys(state.entries).sort().reverse();
+  const h=document.getElementById('history');
+  if(!keys.length){ h.innerHTML='<div class="sub" style="text-align:center;padding:16px 0">No days logged yet.</div>'; return; }
+  h.innerHTML='';
+  keys.forEach(k=>{
+    const e=state.entries[k]; const d=parseKey(k);
+    const b=document.createElement('button'); b.className='day';
+    const foods=e.foods.map(id=>foodById(id)).filter(Boolean).map(f=>esc(f.emoji||'🍽️')).join('');
+    const cell=v=>`<span class="${v||''}">${v?FACE[v]:''}</span>`;
+    b.innerHTML=`<div class="d"><b>${d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</b>${d.toLocaleDateString('en-AU',{weekday:'short'})}</div>
+      <div class="f">${foods||'<span class="empty">no suspects</span>'}</div>
+      <div class="s">${cell(e.day)}${cell(e.night)}${cell(e.poop==='good'?'good':e.poop)}</div>`;
+    if(e.poop==='good') b.querySelector('.s span:last-child').textContent='💩';
+    b.onclick=()=>{cur=k;show('log')};
+    h.appendChild(b);
+  });
+}
+
+// ---- export / backup
+function download(name,text,type){
+  const blob=new Blob([text],{type});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function csvCell(s){ s=String(s??''); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+document.getElementById('csvBtn').onclick=()=>{
+  const foods=state.foods.filter(f=>!f.hidden || Object.values(state.entries).some(e=>e.foods.includes(f.id)));
+  const head=['date',...foods.map(f=>f.name),'stomach_day','stomach_night','poop','note'];
+  const lines=[head.map(csvCell).join(',')];
+  Object.keys(state.entries).sort().forEach(k=>{
+    const e=state.entries[k];
+    lines.push([k,...foods.map(f=>e.foods.includes(f.id)?1:0),e.day||'',e.night||'',e.poop||'',e.note||''].map(csvCell).join(','));
+  });
+  download(`gut-instinct-${todayKey()}.csv`,lines.join('\n'),'text/csv');
+};
+document.getElementById('backupBtn').onclick=()=>download(`gut-instinct-backup-${todayKey()}.json`,JSON.stringify(state,null,1),'application/json');
+document.getElementById('restoreBtn').onclick=()=>document.getElementById('restoreFile').click();
+document.getElementById('restoreFile').onchange=ev=>{
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const s=JSON.parse(r.result);
+      if(!Array.isArray(s.foods)||!s.entries) throw 0;
+      if(confirm('Replace everything on this phone with this backup?')){ state=s; save(false); renderAll(); }
+    }catch(e){ alert("That file doesn't look like a Gut Instinct backup."); }
+    ev.target.value='';
+  };
+  r.readAsText(f);
+};
+
+// ---- edit suspects
+function renderEdit(){
+  const list=document.getElementById('editList'); list.innerHTML='';
+  state.foods.forEach(f=>{
+    const row=document.createElement('div'); row.className='editrow';
+    row.style.opacity=f.hidden?.5:1;
+    row.innerHTML=`<input class="em" maxlength="4" value="${esc(f.emoji||'')}"><input class="nm" value="${esc(f.name)}"><button class="iconbtn" aria-label="${f.hidden?'Restore':'Remove'}">${f.hidden?'↩︎':'✕'}</button>`;
+    const [em,nm,btn]=row.children;
+    em.oninput=()=>{f.emoji=em.value.trim();save(false)};
+    nm.oninput=()=>{f.name=nm.value;save(false)};
+    btn.onclick=()=>{
+      const used=Object.values(state.entries).some(e=>e.foods.includes(f.id));
+      if(f.hidden){ delete f.hidden; }
+      else if(used){ f.hidden=true; }
+      else { state.foods=state.foods.filter(x=>x!==f); }
+      save(false); renderEdit();
+    };
+    list.appendChild(row);
+  });
+}
+document.getElementById('addFood').onclick=()=>{
+  const nm=document.getElementById('newNm'), em=document.getElementById('newEm');
+  const name=nm.value.trim(); if(!name) return nm.focus();
+  state.foods.push({id:'f'+Date.now().toString(36),name,emoji:em.value.trim()||'🍽️'});
+  nm.value='';em.value=''; save(false); renderEdit();
+};
+document.getElementById('newNm').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('addFood').click()});
+document.getElementById('editFoods').onclick=()=>{renderEdit();document.getElementById('sheetBg').classList.add('on')};
+function closeSheet(){
+  state.foods.forEach(f=>{ if(!f.name.trim()) f.name='Unnamed'; });
+  save(false);
+  document.getElementById('sheetBg').classList.remove('on'); renderLog();
+}
+document.getElementById('closeSheet').onclick=closeSheet;
+document.getElementById('sheetBg').onclick=e=>{if(e.target.id==='sheetBg')closeSheet()};
+
+// ---- tabs
+function show(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(v==='log') renderLog(); if(v==='clues') renderClues(); if(v==='file') renderHistory();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+function renderAll(){ renderLog(); renderClues(); renderHistory(); }
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+// jump to today if the app is reopened on a new day
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && cur>todayKey()) cur=todayKey(); });
+
+// ---- theme
+const THEME_KEY='gutinstinct_theme';
+const THEME_BAR={casefile:'#e8dcbc',noir:'#121110'};
+function applyTheme(t){
+  if(!THEME_BAR[t]) t='casefile';
+  document.documentElement.dataset.theme=t;
+  document.querySelector('meta[name=theme-color]').content=THEME_BAR[t];
+  document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]').content = t==='noir'?'black':'default';
+  document.querySelectorAll('.themepick').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+}
+let savedTheme; try{savedTheme=localStorage.getItem(THEME_KEY)}catch(e){}
+applyTheme(savedTheme||'casefile');
+document.querySelectorAll('.themepick').forEach(b=>b.onclick=()=>{applyTheme(b.dataset.t);try{localStorage.setItem(THEME_KEY,b.dataset.t)}catch(e){}});
+renderLog();
+</script>
+</body>
+</html>
