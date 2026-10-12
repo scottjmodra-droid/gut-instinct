@@ -35,6 +35,9 @@
   --nav:#161412;
 }
 [hidden]{display:none!important}
+/* no long-press text selection / callout, except where typing */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,.report{-webkit-user-select:text;user-select:text}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 [data-theme="noir"] body{background:radial-gradient(120% 70% at 50% 0%,#2a2622 0%,var(--bg) 60%) fixed var(--bg)}
@@ -460,7 +463,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.11 · 13 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.12 · 13 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
