@@ -368,7 +368,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="card" id="cluesCircs" hidden></div>
     <div class="card" id="trialCard"></div>
     <div class="stats" id="stats"></div>
-    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is any 😣 rating. For exercise and water, Clues looks for a benefit the same day, the next day, or after 2–3 days in a row. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
+    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is any 😣 rating. For exercise and water, Clues looks for a benefit the same day, the next day, or within 3 days after. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
   </section>
 
   <!-- CASE FILE -->
@@ -432,7 +432,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.6 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.7 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -447,8 +447,8 @@ const DEFAULT_FOODS = [
 const MAX_FOODS = 15;
 const DEFAULT_CIRCS = [
   {id:'period',name:'Period',emoji:'📅'},
-  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,show:'Exercise',phr:{same:['when you exercised','when you didn\'t'],next:['the day after exercising','the day after not exercising'],build:['after exercising on 2+ of the previous 3 days','otherwise']}},
-  {id:'water',name:'Enough water',emoji:'💧',helps:true,show:'Enough water',phr:{same:['when you drank enough water','when you didn\'t'],next:['the day after drinking enough water','the day after not'],build:['after enough water on 2+ of the previous 3 days','otherwise']}}
+  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,show:'Exercise',phr:{same:['when you exercised','when you didn\'t'],next:['the day after exercising','the day after not exercising'],build:['within 3 days of exercising','otherwise']}},
+  {id:'water',name:'Enough water',emoji:'💧',helps:true,show:'Enough water',phr:{same:['when you drank enough water','when you didn\'t'],next:['the day after drinking enough water','the day after not'],build:['within 3 days of drinking enough water','otherwise']}}
 ];
 const SYMS = [
   // night is logged the morning after, but saved against the previous day (the day the food was eaten)
@@ -711,14 +711,14 @@ function analyseFoods(keys, withSym){
       wN: win==='same' ? sameW.length : nW.length};
   }).filter(r=>r.used || !r.f.hidden);
 }
-// helpers (exercise, water): look for a benefit the same day, the next day, or after a build-up over 3 days
+// helpers (exercise, water): look for a benefit the same day, the next day, or any time within the 3 days after
 function helperRow(c, keys, withSym){
   const did = k => hasCirc(k,c);
   const E = k => state.entries[k];
   const windows = {
     same:  k => did(k),
     next:  k => did(addDays(k,-1)),
-    build: k => [1,2,3].filter(i=>did(addDays(k,-i))).length>=2
+    build: k => [1,2,3].some(i=>did(addDays(k,-i)))
   };
   let best=null;
   Object.entries(windows).forEach(([w,fn])=>{
