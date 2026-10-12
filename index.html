@@ -207,6 +207,7 @@ body.reporting{padding-bottom:0}
 .datecard .datenav button{width:40px;height:40px}
 [data-theme="casefile"] .card.datecard::before{display:none}
 [data-theme="casefile"] .card.datecard{border-radius:14px;margin-top:12px}
+.subhead{display:flex;justify-content:space-between;align-items:center;margin:8px 0 2px;font-weight:600;font-size:14px}
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -463,7 +464,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.14 · 13 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.15 · 13 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -478,8 +479,8 @@ const DEFAULT_FOODS = [
 const MAX_FOODS = 15;
 const DEFAULT_CIRCS = [
   {id:'period',name:'Period',emoji:'📅'},
-  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,show:'Exercise',phr:{same:['when you exercised','when you didn\'t'],next:['the day after exercising','the day after not exercising'],build:['within 3 days of exercising','otherwise']}},
-  {id:'water',name:'Enough water',emoji:'💧',helps:true,show:'Enough water',phr:{same:['when you drank enough water','when you didn\'t'],next:['the day after drinking enough water','the day after not'],build:['within 3 days of drinking enough water','otherwise']}},
+  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,show:'Exercise',phr:{same:['when you exercised','when you didn\'t'],next:['the day after exercising','the day after not exercising'],build:['within 3 days of exercising','otherwise'],pSame:['on days you exercised','on days you didn\'t'],pNext:['the day after exercising','the day after not exercising']}},
+  {id:'water',name:'Enough water',emoji:'💧',helps:true,show:'Enough water',phr:{same:['when you drank enough water','when you didn\'t'],next:['the day after drinking enough water','the day after not'],build:['within 3 days of drinking enough water','otherwise'],pSame:['on days you drank enough water','on days you didn\'t'],pNext:['the day after drinking enough water','the day after not']}},
   {id:'stress',name:'Stressed',emoji:'😫',hidden:true},
   {id:'sleep',name:'Slept badly',emoji:'😴',hidden:true}
 ];
@@ -768,7 +769,18 @@ function helperRow(c, keys, withSym){
   if(!best) v={c:'v-na',t:'Needs more evidence',o:0};
   else if(best.gain>=0.10) v={c:'v-inn',t:early()?'💪 Might help':'💪 Seems to help',o:2};
   else v={c:'v-na',t:'No clear link',o:1};
-  return {c,n,v,best,helper:true,label:c.show||c.name,em:c.emoji||'📌',used:n>0,d:best?best.gain:0};
+  // 💩 check: shorter lead time (same day / next day); 'None' counts as a bad poop day
+  const pDays = keys.filter(k=>state.entries[k].poop);
+  const goodP = k => state.entries[k].poop==='good';
+  let poop=null;
+  [['same',k=>did(k)],['next',k=>did(addDays(k,-1))]].forEach(([w,fn])=>{
+    const W=pDays.filter(fn), Wo=pDays.filter(k=>!fn(k));
+    if(W.length<MIN || Wo.length<MIN) return;
+    const gw=W.filter(goodP).length/W.length, gwo=Wo.filter(goodP).length/Wo.length, gain=gw-gwo;
+    if(!poop || gain>poop.gain) poop={w,gain,gw,gwo};
+  });
+  if(poop) poop.v = poop.gain>=0.10 ? {c:'v-inn',t:early()?'💪 Might help':'💪 Seems to help'} : {c:'v-na',t:'No clear link'};
+  return {c,n,v,best,poop,helper:true,label:c.show||c.name,em:c.emoji||'📌',used:n>0,d:best?best.gain:0};
 }
 function circRows(keys, withSym){
   const crow = state.circs.map(c=>{
@@ -841,6 +853,9 @@ function renderClues(){
   const helps = crow.filter(r=>r.helper && r.v.c==='v-inn').sort((a,b)=>b.d-a.d)[0];
   if(helps){ const p=helps.c.phr||{}; const ph=(p[helps.best.w]||['with it','without'])[0];
     H+=`<div class="hl2">💪 <b>Good news:</b> rough days drop from <b>${pct(helps.best.rwo)}</b> to <b>${pct(helps.best.rw)}</b> ${ph}.</div>`; }
+  const pHelp = crow.filter(r=>r.helper && r.poop && r.poop.v.c==='v-inn').sort((a,b)=>b.poop.gain-a.poop.gain)[0];
+  if(pHelp){ const pp=(pHelp.c.phr||{})[pHelp.poop.w==='next'?'pNext':'pSame']||['with it']; 
+    H+=`<div class="hl2">💩 <b>${esc(pHelp.label)} ${early()?'might help':'seems to help'} your poops:</b> good poops ${Math.round(pHelp.poop.gw*100)}% of the time ${pp[0]}, vs ${Math.round(pHelp.poop.gwo*100)}% otherwise.</div>`; }
   if(acc) H+=`<div class="hl2">Also: <b>${acc.em} ${esc(acc.label)}</b> lines up with rough days (${acc.wR} of ${acc.n} days).</div>`;
   const tt=state.trial; if(tt){ const tf=foodById(tt.id); if(tf) H+=`<div class="hl2">⚖️ ${esc(tf.emoji)} ${esc(tf.name)} is on trial — day ${Math.min(tt.days,daysBetween(tt.s,todayKey())+1)} of ${tt.days}.</div>`; }
   const ed=evidenceDays();
@@ -877,21 +892,27 @@ function renderClues(){
   box.querySelectorAll('.suspect.tap').forEach(el=>el.onclick=()=>{ el.classList.toggle('open'); el.querySelector('.chev').textContent = el.classList.contains('open')?'Hide details ▴':'Tap for details ▾'; });
 
   // ---- circumstance card
-  const cj=crow.filter(r=>r.v.t!=='Needs more evidence'&&r.v.t!=='Can\'t compare');
-  const cthin=crow.filter(r=>r.v.t==='Needs more evidence'||r.v.t==='Can\'t compare');
+  const cj=crow.filter(r=> r.helper ? (r.best||r.poop) : (r.v.t!=='Needs more evidence'&&r.v.t!=='Can\'t compare'));
+  const cthin=crow.filter(r=> !cj.includes(r));
   cbox.hidden = !crow.length;
   const crowHTML = r => {
     if(r.helper){
-      const p=(r.c.phr||{})[r.best?r.best.w:'same']||['with it','without it'];
+      const ph=r.c.phr||{};
+      const p=ph[r.best?r.best.w:'same']||['with it','without it'];
+      const pp=r.poop ? (ph[r.poop.w==='next'?'pNext':'pSame']||['with it','without it']) : null;
       return `<div class="suspect">
       <div class="row1">
         <span class="name">${r.em} ${esc(r.label)} <span class="hidden-tag">· ${r.n} day${r.n===1?'':'s'}</span></span>
-        <span class="verdict ${r.v.c}">${r.v.t}</span>
       </div>
-      <div class="cmp">
+      ${r.best?`<div class="subhead"><span>😣 Rough days</span><span class="verdict ${r.v.c}">${r.v.t}</span></div><div class="cmp">
         <span class="cl">Rough days ${p[0]}</span>${bar(r.best.rw,'g')}<span class="pct">${pct(r.best.rw)}</span>
         <span class="cl">Rough days ${p[1]}</span>${bar(r.best.rwo,'wo')}<span class="pct">${pct(r.best.rwo)}</span>
-      </div></div>`;
+      </div>`:''}
+      ${pp?`<div class="subhead"><span>💩 Poops</span><span class="verdict ${r.poop.v.c}">${r.poop.v.t}</span></div>
+      <div class="cmp">
+        <span class="cl">Good poops ${pp[0]}</span>${bar(r.poop.gw,'g')}<span class="pct">${pct(r.poop.gw)}</span>
+        <span class="cl">Good poops ${pp[1]}</span>${bar(r.poop.gwo,'wo')}<span class="pct">${pct(r.poop.gwo)}</span>
+      </div>`:''}</div>`;
     }
     return null;
   };
@@ -1309,7 +1330,8 @@ function openReport(){
     <h3>Other factors</h3>
     ${circs.length?`<table><tr><th>Factor</th><th>Days</th><th>Rough with</th><th>Rough without</th><th>Pattern</th></tr>
       ${circs.map(r=> r.helper
-        ? `<tr><td>${esc(r.label)}</td><td>${r.n}</td><td>${r.best?pc(r.best.rw):'–'}</td><td>${r.best?pc(r.best.rwo):'–'}</td><td>${r.v.t.replace('💪 ','')}${r.best?` (${r.best.w==='same'?'same day':r.best.w==='next'?'next day':'within 3 days'})`:''}</td></tr>`
+        ? `<tr><td>${esc(r.label)}</td><td>${r.n}</td><td>${r.best?pc(r.best.rw):'–'}</td><td>${r.best?pc(r.best.rwo):'–'}</td><td>${r.best?r.v.t.replace('💪 ',''):'Not enough data'}${r.best?` (${r.best.w==='same'?'same day':r.best.w==='next'?'next day':'within 3 days'})`:''}</td></tr>`
+          + (r.poop?`<tr><td>${esc(r.label)}: normal bowel movement</td><td>${r.n}</td><td colspan="2">${pc(r.poop.gw)} with vs ${pc(r.poop.gwo)} without (${r.poop.w==='next'?'next day':'same day'}; no movement counted as not normal)</td><td>${r.poop.v.t.replace('💪 ','')}</td></tr>`:'')
         : `<tr><td>${esc(r.label)}</td><td>${r.n}</td><td>${pc(r.sw)}</td><td>${pc(r.swo)}</td><td>${r.v.t}</td></tr>`).join('')}</table>`:'<div class="muted">Not enough data yet.</div>'}
     ${(state.trials||[]).length?`<h3>Elimination trials</h3><table><tr><th>Food removed</th><th>Started</th><th>Length</th><th>Result</th></tr>
       ${state.trials.map(t=>{const f=foodById(t.id);return `<tr><td>${esc(f?f.name:'?')}</td><td>${fmt(t.s)}</td><td>${t.days} days</td><td>${t.v}: ${esc(t.why)}</td></tr>`}).join('')}</table>`:''}
