@@ -42,13 +42,13 @@ html,body{margin:0;background:var(--bg);color:var(--ink)}
 body{font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .wrap{max-width:560px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px 16px}
 h1,h2,.stat b,.datelabel b{font-family:"Special Elite","Courier New",monospace;font-weight:400}
-h1{font-size:28px;margin:0;display:flex;align-items:center;gap:8px}
+h1{font-size:28px;margin:0;white-space:nowrap;display:flex;align-items:center;gap:8px}
 h1 img{width:30px;height:30px;border-radius:7px}
 h2{font-size:20px;margin:0}
 [data-theme="noir"] h1,[data-theme="noir"] h2{text-transform:uppercase;letter-spacing:.06em}
 [data-theme="noir"] h1{font-size:24px}
 .sub{color:var(--muted);font-size:13px}
-header.top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+header.top{display:flex;gap:8px;align-items:baseline;justify-content:space-between;margin-bottom:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0;box-shadow:var(--shadow)}
 .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .card-head .sub{margin-top:2px}
@@ -102,6 +102,63 @@ button{font:inherit;color:inherit;cursor:pointer}
 .chip .d{font-size:11px;color:var(--accent);font-weight:600;line-height:1.1}
 .day .f .cx{font-size:15px;letter-spacing:1px;opacity:.9;margin-left:4px;padding-left:6px;border-left:1px solid var(--line)}
 .removedhd{font-size:12px;color:var(--muted);margin:14px 0 2px;text-transform:uppercase;letter-spacing:.05em}
+.closebox{text-align:center}
+.prog{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.prog span{font-size:12px;padding:5px 9px;border-radius:999px;border:1px dashed var(--line);color:var(--muted)}
+.prog span.done{border:1px solid var(--good);background:var(--good-soft);color:var(--ink);font-weight:600}
+.closebox .primary.closed{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.closednote{font-size:12px;color:var(--muted);margin-top:8px;min-height:1px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:20;align-items:center;justify-content:center;padding:20px}
+.modal-bg.on{display:flex}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 18px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:85vh;overflow:auto}
+.modal h2{margin-bottom:8px}
+.modal p{margin:8px 0;font-size:15px}
+.modal .big{font-size:44px;line-height:1.1;margin-bottom:6px}
+.modal .primary{margin-top:14px}
+.modal .tapnote{font-size:12px;color:var(--muted);margin-top:14px}
+.stamp{display:inline-block;font-family:"Special Elite","Courier New",monospace;font-size:34px;color:var(--accent);border:4px solid var(--accent);border-radius:8px;padding:6px 16px;transform:rotate(-8deg);margin:18px 0 14px;letter-spacing:.06em;animation:stampIn .45s cubic-bezier(.2,1.6,.4,1) both;mix-blend-mode:multiply}
+[data-theme="noir"] .stamp{mix-blend-mode:normal;border:0;transform:none;color:var(--ink);font-size:30px;text-transform:uppercase;letter-spacing:.14em;animation:typeIn .9s steps(12) both;overflow:hidden;white-space:nowrap;border-right:3px solid var(--accent);padding:0 4px}
+@keyframes stampIn{0%{transform:scale(2.6) rotate(-14deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(-8deg);opacity:1}}
+@keyframes typeIn{from{max-width:0}to{max-width:100%}}
+.pun{font-style:italic;color:var(--muted)}
+.brief{text-align:left}
+.brief .row{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.brief .row:first-of-type{border-top:0}
+.brief .row b{font-weight:600}
+.rankcard{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.rankcard .rk{font-size:44px;line-height:1}
+.rankcard .rt{flex:1;min-width:160px}
+.rankcard .rt h2{margin:0}
+.rankcard .meter{height:8px;border-radius:4px;background:var(--none-soft);overflow:hidden;margin:8px 0 4px}
+.rankcard .meter i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.rankcard .rbtns{width:100%;display:flex;gap:8px}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calhead button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;font-size:18px}
+.calhead button:disabled{opacity:.3}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .wd{font-size:11px;color:var(--muted);text-align:center;padding-bottom:2px}
+.cal .c{aspect-ratio:1;border-radius:8px;border:1px solid var(--line);background:transparent;position:relative;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;color:var(--ink)}
+.cal .c.blank{border:0}
+.cal .c.future{opacity:.35}
+.cal .c.good{background:var(--good-soft);border-color:var(--good)}
+.cal .c.ok{background:var(--ok-soft);border-color:var(--ok)}
+.cal .c.bad{background:var(--bad-soft);border-color:var(--bad)}
+.cal .c.today{box-shadow:0 0 0 2px var(--accent)}
+.cal .c .st{position:absolute;top:-3px;right:-2px;font-size:11px;color:var(--accent);font-weight:700;transform:rotate(12deg)}
+.cal .c .pd{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.callegend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--muted);margin-top:10px}
+.callegend .lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.lg.good{background:var(--good-soft);border:1px solid var(--good)}.lg.ok{background:var(--ok-soft);border:1px solid var(--ok)}.lg.bad{background:var(--bad-soft);border:1px solid var(--bad)}
+.mini{color:var(--accent)}
+.trial h2{margin-bottom:6px}
+.trialpick{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.trialpick button{border:1.5px solid var(--line);background:transparent;border-radius:999px;padding:6px 10px;font-size:14px}
+.trialpick button.on{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.trialbar{height:10px;border-radius:5px;background:var(--none-soft);overflow:hidden;margin:10px 0 6px}
+.trialbar i{display:block;height:100%;background:var(--accent)}
+.verdicts{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.verdicts div{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;gap:8px}
+.chip .tr{font-size:10px;color:var(--bad);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -230,6 +287,8 @@ nav.tabs button.on .e{filter:none;opacity:1}
       <div class="bactions"><button class="bbtn" id="backupNow">Back up now</button><button class="bbtn ghost" id="backupLater">Later</button></div>
     </div>
 
+    <div class="banner trialbn" id="trialBanner" hidden></div>
+
     <div class="card">
       <div class="datenav">
         <button id="prev" aria-label="Previous day">‹</button>
@@ -269,11 +328,18 @@ nav.tabs button.on .e{filter:none;opacity:1}
       </div>
       <div class="chips" id="circChips"></div>
     </div>
+
+    <div class="card closebox">
+      <div class="prog" id="prog"></div>
+      <button class="primary" id="closeCase">Close the case</button>
+      <div class="closednote" id="closedNote"></div>
+    </div>
   </section>
 
   <!-- CLUES -->
   <section id="v-clues" class="view">
     <header class="top"><h1>Clues</h1><span class="sub">who's the culprit?</span></header>
+    <div class="card" id="trialCard"></div>
     <div class="seg" id="range">
       <button data-r="14">2 weeks</button><button data-r="30">30 days</button><button data-r="all">All time</button>
     </div>
@@ -286,6 +352,12 @@ nav.tabs button.on .e{filter:none;opacity:1}
   <!-- CASE FILE -->
   <section id="v-file" class="view">
     <header class="top"><h1>Case file</h1><span class="sub">tap a day to edit</span></header>
+    <div class="card rankcard" id="rankCard"></div>
+    <div class="card">
+      <div class="calhead"><button id="calPrev" aria-label="Previous month">‹</button><h2 id="calTitle"></h2><button id="calNext" aria-label="Next month">›</button></div>
+      <div class="cal" id="cal"></div>
+      <div class="callegend"><span><i class="lg good"></i>good</span><span><i class="lg ok"></i>ok</span><span><i class="lg bad"></i>rough</span><span><b class="mini">✔</b> case closed</span></div>
+    </div>
     <div class="card">
       <div class="legend"><span>Day</span><span>Night</span><span>💩</span></div>
       <div id="history"></div>
@@ -319,6 +391,8 @@ nav.tabs button.on .e{filter:none;opacity:1}
   <button data-v="file"><span class="e">🗂️</span>Case file</button>
 </div></nav>
 
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
 <!-- edit suspects sheet -->
 <div class="sheet-bg" id="sheetBg">
   <div class="sheet">
@@ -335,7 +409,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.14 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.0 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -469,7 +543,8 @@ function renderLog(){
   show.forEach(f=>{
     const b=document.createElement('button');
     b.className='chip'+(e.foods.includes(f.id)?' on':'');
-    b.innerHTML=`<span class="e">${esc(f.emoji||'🍽️')}</span><span class="n">${esc(f.name)}</span>`;
+    const onTrial = state.trial && state.trial.id===f.id && cur>=state.trial.s && cur<=trialEnd(state.trial);
+    b.innerHTML=`<span class="e">${esc(f.emoji||'🍽️')}</span><span class="n">${esc(f.name)}</span>${onTrial?'<span class="tr">on trial</span>':''}`;
     b.onclick=()=>{
       const x=entry(cur); const i=x.foods.indexOf(f.id);
       if(i>=0) x.foods.splice(i,1); else x.foods.push(f.id);
@@ -527,8 +602,9 @@ function renderLog(){
   note.value=e.note||'';
   document.getElementById('noteWrap').open = !!(e.note||'').trim();
 
-  const n=Object.keys(state.entries).length;
-  document.getElementById('streak').textContent = n? `${n} day${n>1?'s':''} logged` : '';
+  const tc=totalCounted(), r=RANKS[rankIndex(tc)], sk=streak();
+  document.getElementById('streak').textContent = tc ? `${r[2]}${sk?` 🔥 ${sk}`:''}` : '';
+  renderClose(); renderTrialBanner();
 }
 document.getElementById('foodNote').addEventListener('input',ev=>{
   const x=entry(cur); x.foodNote=ev.target.value; setEntry(cur,x);
@@ -552,7 +628,7 @@ function renderBanners(){
   // missed day: only on today's screen, only once she's been logging for a bit
   const t=todayKey(), yk=addDays(t,-1), ye=state.entries[yk];
   const loggedBefore = Object.keys(state.entries).some(k=>k<yk);
-  const missed = cur===t && loggedBefore && !(ye && (ye.foods.length || ye.checked));
+  const missed = cur===t && loggedBefore && !(ye && (ye.foods.length || ye.checked || ye.closed));
   document.getElementById('missBanner').hidden = !missed;
   if(missed) document.getElementById('missText').innerHTML = `🕵️ No suspects logged for <b>yesterday (${parseKey(yk).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})})</b>. Add them?`;
 
@@ -580,28 +656,9 @@ function rough(e){ return e.day==='bad'||e.night==='bad'||e.poop==='bad'; }
 function hasSym(e){ return !!(e && (e.day||e.night||e.poop)); }
 function rate(list){ return list.length? list.filter(rough).length/list.length : null; }
 
-let range = LOCAL.get('gutinstinct_range') || 'all';
-document.querySelectorAll('#range button').forEach(b=>b.onclick=()=>{ range=b.dataset.r; LOCAL.set('gutinstinct_range',range); renderClues(); });
-function renderClues(){
-  document.querySelectorAll('#range button').forEach(b=>b.classList.toggle('on',b.dataset.r===range));
-  const cutoff = range==='all' ? '' : addDays(todayKey(), -(+range-1));
-  const keys=Object.keys(state.entries).sort().filter(k=>k>=cutoff);
-  const withSym=keys.filter(k=>hasSym(state.entries[k]));
-  const roughN=withSym.filter(k=>rough(state.entries[k])).length;
-  document.getElementById('stats').innerHTML=`
-    <div class="stat"><b>${withSym.length}</b><span>days logged</span></div>
-    <div class="stat"><b>${roughN}</b><span>rough days</span></div>
-    <div class="stat"><b>${withSym.length?Math.round(roughN/withSym.length*100)+'%':'–'}</b><span>rough-day rate</span></div>`;
-
-  const box=document.getElementById('clues');
-  if(withSym.length<3){
-    document.getElementById('cluesCircs').hidden=true;
-    box.innerHTML=`<div class="sub" style="text-align:center;padding:20px 0">🕵️ Not enough evidence yet.<br>Log a few more days and the suspects will start to show their hand.</div>`;
-    return;
-  }
-
-  const MIN=3;
-  const rows = state.foods.map(f=>{
+const MIN=3;
+function analyseFoods(keys, withSym){
+  return state.foods.map(f=>{
     const ate=k=>state.entries[k].foods.includes(f.id);
     const sameW=withSym.filter(ate).map(k=>state.entries[k]);
     const sameWo=withSym.filter(k=>!ate(k)).map(k=>state.entries[k]);
@@ -625,7 +682,29 @@ function renderClues(){
     else v={c:'v-inn',t:'Looks innocent',o:2};
     return {f,n,sw,swo,nw,nwo,v,best,used:n>0};
   }).filter(r=>r.used || !r.f.hidden);
+}
+let range = LOCAL.get('gutinstinct_range') || 'all';
+document.querySelectorAll('#range button').forEach(b=>b.onclick=()=>{ range=b.dataset.r; LOCAL.set('gutinstinct_range',range); renderClues(); });
+function renderClues(){
+  renderTrial();
+  document.querySelectorAll('#range button').forEach(b=>b.classList.toggle('on',b.dataset.r===range));
+  const cutoff = range==='all' ? '' : addDays(todayKey(), -(+range-1));
+  const keys=Object.keys(state.entries).sort().filter(k=>k>=cutoff);
+  const withSym=keys.filter(k=>hasSym(state.entries[k]));
+  const roughN=withSym.filter(k=>rough(state.entries[k])).length;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><b>${withSym.length}</b><span>days logged</span></div>
+    <div class="stat"><b>${roughN}</b><span>rough days</span></div>
+    <div class="stat"><b>${withSym.length?Math.round(roughN/withSym.length*100)+'%':'–'}</b><span>rough-day rate</span></div>`;
 
+  const box=document.getElementById('clues');
+  if(withSym.length<3){
+    document.getElementById('cluesCircs').hidden=true;
+    box.innerHTML=`<div class="sub" style="text-align:center;padding:20px 0">🕵️ Not enough evidence yet.<br>Log a few more days and the suspects will start to show their hand.</div>`;
+    return;
+  }
+
+  const rows = analyseFoods(keys, withSym);
   rows.sort((a,b)=> b.v.o-a.v.o || b.best-a.best || b.n-a.n);
 
   const pct=x=>x==null?'–':Math.round(x*100)+'%';
@@ -680,7 +759,7 @@ function renderClues(){
 
 // ---- CASE FILE
 function renderHistory(){
-  renderBackupInfo();
+  renderBackupInfo(); renderRank(); renderCal();
   const keys=Object.keys(state.entries).sort().reverse();
   const h=document.getElementById('history');
   if(!keys.length){ h.innerHTML='<div class="sub" style="text-align:center;padding:16px 0">No days logged yet.</div>'; return; }
@@ -819,6 +898,233 @@ function closeSheet(){
 document.getElementById('closeSheet').onclick=closeSheet;
 document.getElementById('sheetBg').onclick=e=>{if(e.target.id==='sheetBg')closeSheet()};
 
+
+// ================= GAME LAYER =================
+const RANKS=[[0,'Rookie','🔰'],[3,'Constable','👮'],[7,'Detective','🕵️'],[14,'Inspector','🔍'],[30,'Chief Inspector','🎖️'],[60,'Superintendent','⭐'],[100,'Sherlock','🎩']];
+const PUNS=['The stomach never lies.','Elementary, my dear gut.','Another day, another clue.','The plot thickens… like gravy.','Case closed. Kettle on.','Your gut has been heard.','Evidence logged. The culprit grows nervous.','No stone unturned. No crumb either.','Somebody\'s guilty. Just a matter of time.','The truth is in there somewhere.'];
+const NOIR=['The city sleeps. Your gut doesn\'t.','Another night in this town. Another clue.','Somewhere out there, a garlic clove is sweating.','In this business, everybody\'s a suspect.','The rain kept falling. So did the evidence.'];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const daysBetween=(a,b)=>Math.round((parseKey(b)-parseKey(a))/86400000);
+
+// a day "counts" once it's closed or today's stomach has been rated
+function counted(k){ const e=state.entries[k]; return !!(e && (e.closed || e.day)); }
+function totalCounted(){ return Object.keys(state.entries).filter(counted).length; }
+function rankIndex(n){ let i=0; RANKS.forEach((r,j)=>{ if(n>=r[0]) i=j; }); return i; }
+// streak forgives one missed day in any 7
+function streak(){
+  let d=todayKey(); if(!counted(d)) d=addDays(d,-1);
+  let s=0, forgiven=null;
+  for(let i=0;i<1000;i++){
+    if(counted(d)) s++;
+    else if((forgiven===null || daysBetween(d,forgiven)>=7) && counted(addDays(d,-1))) forgiven=d;
+    else break;
+    d=addDays(d,-1);
+  }
+  return s;
+}
+
+// ---- modal queue
+const mq=[]; let mOpen=false;
+function queueModal(html, onClose){ mq.push({html,onClose}); if(!mOpen) nextModal(); }
+function nextModal(){
+  const m=mq.shift(); const bg=document.getElementById('modalBg');
+  if(!m){ bg.classList.remove('on'); mOpen=false; return; }
+  mOpen=true; document.getElementById('modal').innerHTML=m.html; bg.classList.add('on');
+  const close=()=>{ if(m.onClose) m.onClose(); nextModal(); };
+  bg.onclick=ev=>{ const a=ev.target.closest('[data-act]'); if(a){ const act=a.dataset.act; if(act==='clues'){ mq.length=0; bg.classList.remove('on'); mOpen=false; show('clues'); return; } close(); } else if(ev.target===bg || ev.target.closest('.tapclose')) close(); };
+}
+
+// ---- Close the case
+function renderClose(){
+  const e=entry(cur), prevNight=entry(addDays(cur,-1)).night;
+  const items=[['Suspects',e.foods.length>0||!!(e.foodNote||'').trim()],['🌙 Last night',!!prevNight],['☀️ Today',!!e.day],['💩',!!e.poop]];
+  document.getElementById('prog').innerHTML=items.map(([t,d])=>`<span class="${d?'done':''}">${d?'✓ ':''}${t}</span>`).join('');
+  const btn=document.getElementById('closeCase');
+  btn.textContent = e.closed ? '✔ Case closed · re-close' : 'Close the case';
+  btn.classList.toggle('closed',!!e.closed);
+  const missing=items.filter(i=>!i[1]).length;
+  document.getElementById('closedNote').textContent = e.closed ? 'Changed something? Close it again, or just carry on.' : (missing ? `${missing} piece${missing>1?'s':''} of evidence still missing — you can close it anyway.` : 'All evidence in. Ready to close.');
+}
+document.getElementById('closeCase').onclick=()=>{
+  const x=entry(cur); const was=!!x.closed; x.closed=true; x.closedAt=Date.now(); setEntry(cur,x); renderLog();
+  const noir=document.documentElement.dataset.theme==='noir';
+  queueModal(`<div class="stamp">${noir?'Case filed.':'CASE CLOSED'}</div>
+    <p><b>${niceDate(cur)}</b>${cur===todayKey()||cur===addDays(todayKey(),-1)?' · '+shortDate(cur):''}</p>
+    <p class="pun">${pick(noir?NOIR.concat(PUNS):PUNS)}</p>
+    <p class="sub">${was?'Case file updated.':`🔥 ${streak()}-day streak · ${RANKS[rankIndex(totalCounted())][2]} ${RANKS[rankIndex(totalCounted())][1]}`}</p>
+    <div class="tapnote tapclose">tap to continue</div>`);
+  checkMilestones();
+};
+
+// ---- rank-ups, new leads, trial verdicts, weekly briefing
+function checkMilestones(){
+  if(!LOCAL.get('gutinstinct_welcomed')) return;
+  const ri=rankIndex(totalCounted());
+  if(state.seenRank==null){ state.seenRank=ri; save(false); }
+  else if(ri>state.seenRank){
+    state.seenRank=ri; save(false);
+    const [, name, em]=RANKS[ri], nx=RANKS[ri+1];
+    queueModal(`<div class="big">${em}</div><h2>Promoted!</h2><p>You're now a <b>${name}</b>.</p>
+      <p class="sub">${totalCounted()} days on the case.${nx?` ${nx[0]-totalCounted()} more to make ${nx[1]}.`:' The highest rank there is.'}</p>
+      <button class="primary" data-act="ok">Carry on, ${name}</button>`);
+  }
+  checkLeads(); checkTrial(); checkBriefing();
+}
+function allTimeRows(){
+  const keys=Object.keys(state.entries).sort(); const withSym=keys.filter(k=>hasSym(state.entries[k]));
+  return withSym.length<3 ? [] : analyseFoods(keys, withSym);
+}
+function checkLeads(){
+  const prime=allTimeRows().filter(r=>r.v.c==='v-prime').map(r=>r.f.id);
+  if(!state.knownLeads){ state.knownLeads=prime; save(false); return; }
+  const fresh=prime.filter(id=>!state.knownLeads.includes(id));
+  state.knownLeads=prime; save(false);
+  fresh.forEach(id=>{ const f=foodById(id); if(!f) return;
+    queueModal(`<div class="big">🚨</div><h2>New lead!</h2><p><b>${esc(f.emoji)} ${esc(f.name)}</b> is now a <b>Prime suspect</b>.</p>
+      <p class="sub">Rough days are showing up noticeably more often around it. Want to put it on trial?</p>
+      <button class="primary" data-act="clues">See the evidence</button><div class="tapnote tapclose">later</div>`);
+  });
+}
+
+// ---- trial
+function trialEnd(t){ return addDays(t.s,t.days-1); }
+function trialStats(t){
+  const end=trialEnd(t), keys=Object.keys(state.entries).sort();
+  const during=keys.filter(k=>k>=t.s&&k<=end&&hasSym(state.entries[k]));
+  const before=keys.filter(k=>k<t.s&&k>=addDays(t.s,-30)&&hasSym(state.entries[k]));
+  const breaches=keys.filter(k=>k>=t.s&&k<=end&&state.entries[k].foods.includes(t.id));
+  return {during,before,breaches,rd:rate(during.map(k=>state.entries[k])),rb:rate(before.map(k=>state.entries[k]))};
+}
+function verdictFor(t){
+  const st=trialStats(t);
+  let v,why;
+  if(st.breaches.length>Math.floor(t.days/4)){ v='Mistrial'; why=`It was eaten on ${st.breaches.length} trial days, so the evidence is tainted. Try again?`; }
+  else if(st.during.length<Math.ceil(t.days/2)||st.before.length<5){ v='Mistrial'; why='Not enough days logged before or during the trial to judge.'; }
+  else{
+    const drop=st.rb-st.rd;
+    if(drop>=0.15){ v='Guilty'; why=`Rough days fell from ${Math.round(st.rb*100)}% to ${Math.round(st.rd*100)}% without it.`; }
+    else if(drop<=0.05){ v='Acquitted'; why=`Rough days barely changed (${Math.round(st.rb*100)}% → ${Math.round(st.rd*100)}%) without it.`; }
+    else{ v='Hung jury'; why=`A small improvement (${Math.round(st.rb*100)}% → ${Math.round(st.rd*100)}%). Worth a longer trial.`; }
+  }
+  return {v,why,...st};
+}
+function checkTrial(){
+  const t=state.trial; if(!t || todayKey()<=trialEnd(t)) return;
+  const r=verdictFor(t), f=foodById(t.id)||{name:'Suspect',emoji:'❓'};
+  (state.trials=state.trials||[]).unshift({id:t.id,s:t.s,days:t.days,v:r.v,why:r.why});
+  delete state.trial; save(false);
+  const em={Guilty:'🔨',Acquitted:'🕊️','Hung jury':'🤷',Mistrial:'📄'}[r.v];
+  queueModal(`<div class="big">⚖️</div><h2>The verdict is in</h2><p><b>${esc(f.emoji)} ${esc(f.name)}</b></p>
+    <div class="stamp" style="font-size:30px">${em} ${r.v.toUpperCase()}</div><p>${r.why}</p>
+    <p class="sub">One trial is a strong hint, not proof — other things (period, stress) can sway a fortnight.</p>
+    <button class="primary" data-act="ok">Noted</button>`);
+}
+let trialPick=null, trialDays=14;
+function renderTrial(){
+  const box=document.getElementById('trialCard'); box.classList.add('trial');
+  const t=state.trial;
+  const past=(state.trials||[]).slice(0,4).map(x=>{const f=foodById(x.id)||{name:'?',emoji:'❓'};return `<div><span>${esc(f.emoji)} ${esc(f.name)} · ${parseKey(x.s).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span><b>${x.v}</b></div>`}).join('');
+  const hist = past?`<div class="verdicts"><div class="sub" style="padding:0">Past verdicts</div>${past}</div>`:'';
+  if(t){
+    const f=foodById(t.id)||{name:'?',emoji:'❓'}; const day=Math.min(t.days,daysBetween(t.s,todayKey())+1); const st=trialStats(t);
+    box.innerHTML=`<h2>⚖️ On trial: ${esc(f.emoji)} ${esc(f.name)}</h2>
+      <div class="sub">Day ${day} of ${t.days} · verdict on ${parseKey(addDays(trialEnd(t),1)).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}</div>
+      <div class="trialbar"><i style="width:${day/t.days*100}%"></i></div>
+      <div class="sub">${st.breaches.length?`⚠️ Eaten on ${st.breaches.length} trial day${st.breaches.length>1?'s':''} so far.`:'✓ No slip-ups so far.'} Keep logging every day.</div>
+      <button class="linkbtn" id="trialStop" style="margin-top:6px;padding-left:0">Abandon trial</button>${hist}`;
+    document.getElementById('trialStop').onclick=()=>{ if(confirm('Abandon this trial? No verdict will be recorded.')){ delete state.trial; save(false); renderTrial(); renderLog(); } };
+    return;
+  }
+  const opts=activeFoods().map(f=>`<button data-id="${f.id}" class="${trialPick===f.id?'on':''}">${esc(f.emoji)} ${esc(f.name)}</button>`).join('');
+  box.innerHTML=`<h2>⚖️ Put a suspect on trial</h2>
+    <div class="sub">Cut one suspect completely for a while, keep logging, and get a verdict at the end. Best with one at a time.</div>
+    <div class="trialpick" id="tpick">${opts}</div>
+    <div class="seg" id="tdays" style="margin:0 0 10px"><button data-d="7" class="${trialDays===7?'on':''}">7 days</button><button data-d="14" class="${trialDays===14?'on':''}">14 days</button></div>
+    <button class="primary" id="trialGo" ${trialPick?'':'disabled style="opacity:.5"'}>Start the trial</button>${hist}`;
+  box.querySelectorAll('#tpick button').forEach(b=>b.onclick=()=>{trialPick=b.dataset.id;renderTrial();});
+  box.querySelectorAll('#tdays button').forEach(b=>b.onclick=()=>{trialDays=+b.dataset.d;renderTrial();});
+  document.getElementById('trialGo').onclick=()=>{ if(!trialPick) return; state.trial={id:trialPick,s:todayKey(),days:trialDays}; trialPick=null; save(false); renderTrial(); renderLog();
+    const f=foodById(state.trial.id); queueModal(`<div class="big">⚖️</div><h2>Court is in session</h2><p><b>${esc(f.emoji)} ${esc(f.name)}</b> is on trial for ${state.trial.days} days.</p><p class="sub">Keep it off the menu and log every day. The verdict arrives on ${parseKey(addDays(trialEnd(state.trial),1)).toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'short'})}.</p><button class="primary" data-act="ok">All rise</button>`); };
+}
+function renderTrialBanner(){
+  const bn=document.getElementById('trialBanner'), t=state.trial;
+  if(!t || cur<t.s || cur>trialEnd(t)){ bn.hidden=true; return; }
+  const f=foodById(t.id)||{name:'?',emoji:'❓'}; const day=daysBetween(t.s,cur)+1;
+  const ate=entry(cur).foods.includes(t.id);
+  bn.hidden=false;
+  bn.innerHTML = ate ? `⚠️ <b>Objection!</b> ${esc(f.emoji)} ${esc(f.name)} is on trial (day ${day} of ${t.days}) but it's been logged today.`
+                     : `⚖️ ${esc(f.emoji)} <b>${esc(f.name)}</b> is on trial — day ${day} of ${t.days}. Keep it off the menu!`;
+}
+
+// ---- weekly briefing
+function weekStart(k){ const d=parseKey(k); const off=(d.getDay()+6)%7; return addDays(k,-off); }
+function briefingHTML(mon){
+  const days=[...Array(7)].map((_,i)=>addDays(mon,i));
+  const logged=days.filter(counted);
+  const withS=days.filter(k=>hasSym(state.entries[k]));
+  const roughD=withS.filter(k=>rough(state.entries[k]));
+  const score=k=>{const e=state.entries[k];return ['day','night','poop'].reduce((a,f)=>a+(e[f]==='good'?2:e[f]==='ok'?1:0),0)};
+  const best=withS.slice().sort((a,b)=>score(b)-score(a))[0];
+  const top=allTimeRows().filter(r=>r.v.c==='v-prime'||r.v.c==='v-poi').sort((a,b)=>b.best-a.best)[0];
+  const t=state.trial; const tf=t&&foodById(t.id);
+  const end=addDays(mon,6), fmt=k=>parseKey(k).toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+  return `<div class="big">📋</div><h2>Weekly briefing</h2><div class="sub">${fmt(mon)} – ${fmt(end)}</div>
+    <div class="brief" style="margin-top:12px">
+      <div class="row"><span>Days on the case</span><b>${logged.length} / 7</b></div>
+      <div class="row"><span>Rough days</span><b>${roughD.length}</b></div>
+      <div class="row"><span>Best day</span><b>${best?parseKey(best).toLocaleDateString('en-AU',{weekday:'long'}):'–'}</b></div>
+      <div class="row"><span>Top suspect</span><b>${top?esc(top.f.emoji)+' '+esc(top.f.name):'No standout yet'}</b></div>
+      <div class="row"><span>Streak</span><b>🔥 ${streak()} days</b></div>
+      ${tf?`<div class="row"><span>On trial</span><b>${esc(tf.emoji)} ${esc(tf.name)} · day ${Math.min(t.days,daysBetween(t.s,todayKey())+1)}/${t.days}</b></div>`:''}
+    </div>
+    <p class="pun" style="margin-top:12px">${pick(PUNS)}</p>
+    <button class="primary" data-act="ok">Back to work</button>`;
+}
+function checkBriefing(){
+  const lastMon=addDays(weekStart(todayKey()),-7);
+  if(state.lastBriefing===lastMon) return;
+  const n=[...Array(7)].map((_,i)=>addDays(lastMon,i)).filter(counted).length;
+  if(n<3) return;
+  state.lastBriefing=lastMon; save(false);
+  queueModal(briefingHTML(lastMon));
+}
+
+// ---- rank card + calendar
+let calMonth=null;
+function renderRank(){
+  const n=totalCounted(), ri=rankIndex(n), [, name, em]=RANKS[ri], nx=RANKS[ri+1];
+  const lo=RANKS[ri][0], pct = nx ? (n-lo)/(nx[0]-lo)*100 : 100;
+  document.getElementById('rankCard').innerHTML=`<div class="rk">${em}</div>
+    <div class="rt"><h2>${name}</h2><div class="sub">${n} day${n===1?'':'s'} on the case · 🔥 ${streak()}-day streak</div>
+      <div class="meter"><i style="width:${pct}%"></i></div>
+      <div class="sub">${nx?`${nx[0]-n} more day${nx[0]-n===1?'':'s'} to ${nx[2]} ${nx[1]}`:'Top of the force. 🎩'}</div></div>
+    <div class="rbtns"><button class="secondary" id="briefBtn" style="padding:10px">📋 Last week's briefing</button></div>`;
+  document.getElementById('briefBtn').onclick=()=>queueModal(briefingHTML(addDays(weekStart(todayKey()),-7)));
+}
+function renderCal(){
+  const t=parseKey(todayKey());
+  if(!calMonth) calMonth=new Date(t.getFullYear(),t.getMonth(),1);
+  document.getElementById('calTitle').textContent=calMonth.toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  document.getElementById('calNext').disabled = calMonth.getFullYear()===t.getFullYear() && calMonth.getMonth()===t.getMonth();
+  const first=keyOf(calMonth), lead=(calMonth.getDay()+6)%7;
+  const dim=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,0).getDate();
+  const cal=document.getElementById('cal');
+  cal.innerHTML=['M','T','W','T','F','S','S'].map(d=>`<div class="wd">${d}</div>`).join('') + '<div class="c blank"></div>'.repeat(lead);
+  for(let i=0;i<dim;i++){
+    const k=addDays(first,i), e=state.entries[k];
+    let cls='c';
+    if(k>todayKey()) cls+=' future';
+    else if(hasSym(e)) cls += rough(e)?' bad':(['day','night','poop'].some(f=>e[f]==='good')?' good':' ok');
+    if(k===todayKey()) cls+=' today';
+    const b=document.createElement('button'); b.className=cls;
+    b.innerHTML=`${i+1}${e&&e.closed?'<span class="st">✔</span>':''}${periodRun(k)?'<span class="pd"></span>':''}`;
+    if(k<=todayKey()) b.onclick=()=>{cur=k;show('log')}; else b.disabled=true;
+    cal.appendChild(b);
+  }
+}
+document.getElementById('calPrev').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);renderCal();};
+document.getElementById('calNext').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);renderCal();};
+
 // ---- tabs
 function show(v){
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
@@ -852,6 +1158,8 @@ try{ navigator.storage && navigator.storage.persist && navigator.storage.persist
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 }
+setTimeout(checkMilestones, 400);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) setTimeout(checkMilestones,300); });
 document.getElementById('ver').textContent = 'Gut Instinct ' + APP_VERSION;
 renderLog();
 </script>
