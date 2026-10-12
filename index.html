@@ -170,7 +170,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .headline .hl b{font-weight:700}
 .headline .hl2{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.4}
 .headline .kick{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin-bottom:6px}
-.cmp{display:grid;grid-template-columns:92px 1fr 40px;gap:4px 8px;align-items:center;font-size:12px;color:var(--muted)}
+.cmp{display:grid;grid-template-columns:1fr 40px;gap:2px 8px;align-items:center;font-size:12px;color:var(--muted)}
+.cmp .cl{grid-column:1/-1;margin-top:4px}
 .suspect.tap{cursor:pointer}
 .suspect .more{display:none;margin-top:10px}
 .suspect.open .more{display:block}
@@ -366,7 +367,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="card" id="cluesCircs" hidden></div>
     <div class="card" id="trialCard"></div>
     <div class="stats" id="stats"></div>
-    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is any 😣 rating. For exercise and water, it's <i>going without</i> that's investigated. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
+    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is any 😣 rating. For exercise and water, it's <i>skipping them</i> that's investigated. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
   </section>
 
   <!-- CASE FILE -->
@@ -430,7 +431,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.4 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.5 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -445,8 +446,8 @@ const DEFAULT_FOODS = [
 const MAX_FOODS = 15;
 const DEFAULT_CIRCS = [
   {id:'period',name:'Period',emoji:'📅'},
-  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,miss:'No exercise'},
-  {id:'water',name:'Enough water',emoji:'💧',helps:true,miss:'Not enough water'}
+  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,miss:'Skipping exercise',onL:'when skipped',offL:'when exercised'},
+  {id:'water',name:'Enough water',emoji:'💧',helps:true,miss:'Not enough water',onL:'without enough water',offL:'with enough water'}
 ];
 const SYMS = [
   // night is logged the morning after, but saved against the previous day (the day the food was eaten)
@@ -472,7 +473,7 @@ function ensureDefaults(s){
 }
 ensureDefaults(state);
 // v2.3: exercise + water are 'helpers' — in Clues it's going without them that's investigated
-state.circs.forEach(c=>{ const d=DEFAULT_CIRCS.find(x=>x.id===c.id); if(d && d.helps && c.helps===undefined){ c.helps=true; c.miss=d.miss; } });
+state.circs.forEach(c=>{ const d=DEFAULT_CIRCS.find(x=>x.id===c.id); if(d && d.helps){ c.helps=true; c.miss=d.miss; c.onL=d.onL; c.offL=d.offL; } });
 { const p=state.circs.find(c=>c.id==='period'); if(p && p.emoji==='🩸'){ p.emoji='📅'; try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} } }
 if(!state.startedAt){ state.startedAt=Date.now(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} }
 let cur = todayKey();
@@ -754,10 +755,9 @@ function renderClues(){
     if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:0};
     else if(Wo.length<MIN) v={c:'v-na',t:'Can\'t compare',o:0};
     else if(d>=0.10) v={c:'v-prime',t:'Accomplice',o:3};
-    else if(d<=-0.10) v={c:'v-inn',t:'Looks innocent',o:2};
-    else v={c:'v-na',t:'No clear effect',o:1};
+    else v={c:'v-na',t:'No clear link',o:1};
     const label = c.helps ? (c.miss||'Without '+c.name) : c.name;
-    const em = c.helps ? '🚫' : (c.emoji||'📌');
+    const em = c.emoji||'📌';
     return {c,n,sw,swo,v,d,label,em,wR:W.filter(rough).length,used:n>0};
   }).filter(r=>r.used || !r.c.hidden);
   crow.sort((a,b)=> b.v.o-a.v.o || Math.abs(b.d)-Math.abs(a.d));
@@ -769,7 +769,7 @@ function renderClues(){
   let H;
   if(top){
     H=`<div class="kick">${top.v.c==='v-prime'?'Prime suspect':'Person of interest'}</div>
-       <div class="hl">🔍 <b>${esc(top.f.emoji)} ${esc(top.f.name)}</b>. You had a rough day <b>${top.wR} of ${top.wN} times</b> ${when(top)}, compared with <b>${pct(usual)}</b> of days overall.</div>`;
+       <div class="hl">🔍 <b>${esc(top.f.emoji)} ${esc(top.f.name)}</b>. You had a rough day <b>${top.wR} of ${top.wN} times</b> ${when(top)}, compared with <b>${pct(top.win==='next'?top.nwo:top.swo)}</b> of the time when you didn't.</div>`;
   } else {
     H=`<div class="kick">The investigation</div><div class="hl">🕵️ No suspect stands out yet.</div>
        <div class="hl2">${judged.length?'So far the rough days aren\'t lining up with any one food. Keep logging.':'Most suspects need a few more days of evidence.'}</div>`;
@@ -787,17 +787,17 @@ function renderClues(){
         <span class="verdict ${r.v.c}">${r.v.t}</span>
       </div>
       <div class="cmp">
-        <span>${r.win==='next'?'day after eating':'when eaten'}</span>${bar(r.win==='next'?r.nw:r.sw,'w')}<span class="pct">${pct(r.win==='next'?r.nw:r.sw)}</span>
-        <span>usual</span>${bar(usual,'wo')}<span class="pct">${pct(usual)}</span>
+        <span class="cl">Rough days ${r.win==='next'?'the day after eating it':'when eaten'}</span>${bar(r.win==='next'?r.nw:r.sw,'w')}<span class="pct">${pct(r.win==='next'?r.nw:r.sw)}</span>
+        <span class="cl">Rough days ${r.win==='next'?'the day after not eating it':'when not eaten'}</span>${bar(r.win==='next'?r.nwo:r.swo,'wo')}<span class="pct">${pct(r.win==='next'?r.nwo:r.swo)}</span>
       </div>
       <div class="more"><div class="bars">
-        <div class="grp">Rough same day</div>
-        <span>when eaten</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
-        <span>when not</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
-        <div class="grp">Rough next day</div>
+        <div class="grp">Same day</div>
+        <span>eaten</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
+        <span>not eaten</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
+        <div class="grp">Day after</div>
         <span>after eating</span>${bar(r.nw,'w')}<span class="pct">${pct(r.nw)}</span>
         <span>after not</span>${bar(r.nwo,'wo')}<span class="pct">${pct(r.nwo)}</span>
-      </div></div>
+      </div><p class="note" style="margin:6px 0 0">Bars show how often it was a rough day. The verdict uses whichever timing shows the bigger difference.</p></div>
       <div class="chev">Tap for details ▾</div>
     </div>`).join('')
     + (thin.length?`<div class="waiting">⏳ <b>Not enough evidence yet:</b> ${names(thin)}</div>`:'')
@@ -816,8 +816,8 @@ function renderClues(){
         <span class="verdict ${r.v.c}">${r.v.t}</span>
       </div>
       <div class="cmp">
-        <span>${r.c.helps?'days without':'on those days'}</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
-        <span>${r.c.helps?'days with':'other days'}</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
+        <span class="cl">Rough days ${r.c.helps?(r.c.onL||'without it'):'when ticked'}</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
+        <span class="cl">Rough days ${r.c.helps?(r.c.offL||'with it'):'when not ticked'}</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
       </div>
     </div>`).join('')
     + (cthin.length?`<div class="waiting">⏳ <b>Not enough evidence yet:</b> ${cthin.map(r=>`${r.em} ${esc(r.label)}`).join(', ')}</div>`:'');
