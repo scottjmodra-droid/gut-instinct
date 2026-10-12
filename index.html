@@ -145,11 +145,17 @@ button{font:inherit;color:inherit;cursor:pointer}
 .cal .c.bad{background:var(--bad-soft);border-color:var(--bad)}
 .cal .c.today{box-shadow:0 0 0 2px var(--accent)}
 .cal .c .st{position:absolute;top:-3px;right:-2px;font-size:11px;color:var(--accent);font-weight:700;transform:rotate(12deg)}
-.cal .c .pd{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.cal .c .pie{position:absolute;inset:4px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.cal .c .num{position:relative;z-index:1}
+.cal .c.has .num{width:19px;height:19px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.cal .c .st{z-index:2}
+.cal .c .pd{position:absolute;top:3px;left:3px;width:6px;height:6px;border-radius:50%;background:var(--accent);z-index:2;box-shadow:0 0 0 1.5px var(--card)}
 .callegend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--muted);margin-top:10px}
 .callegend .lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
-.lg.good{background:var(--good-soft);border:1px solid var(--good)}.lg.ok{background:var(--ok-soft);border:1px solid var(--ok)}.lg.bad{background:var(--bad-soft);border:1px solid var(--bad)}
+.lg.good{background:var(--good)}.lg.ok{background:var(--ok)}.lg.bad{background:var(--bad)}
 .mini{color:var(--accent)}
+.minipie{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:5px;vertical-align:-3px;background:conic-gradient(var(--good) 0 33.33%,var(--bad) 0 66.66%,var(--ok) 0 100%)}
+.pdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:0}
 .trial h2{margin-bottom:6px}
 .trialpick{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .trialpick button{border:1.5px solid var(--line);background:transparent;border-radius:999px;padding:6px 10px;font-size:14px}
@@ -356,7 +362,8 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="card">
       <div class="calhead"><button id="calPrev" aria-label="Previous month">‹</button><h2 id="calTitle"></h2><button id="calNext" aria-label="Next month">›</button></div>
       <div class="cal" id="cal"></div>
-      <div class="callegend"><span><i class="lg good"></i>good</span><span><i class="lg ok"></i>ok</span><span><i class="lg bad"></i>rough</span><span><b class="mini">✔</b> case closed</span></div>
+      <div class="callegend"><span class="pielg"><i class="minipie"></i>clockwise from top: ☀️ Day · 🌙 Night · 💩</span></div>
+      <div class="callegend" style="margin-top:4px"><span><i class="lg good"></i>good</span><span><i class="lg ok"></i>ok</span><span><i class="lg bad"></i>bad</span><span><b class="mini">✔</b> closed</span><span><i class="pdot"></i>period</span></div>
     </div>
     <div class="card">
       <div class="legend"><span>Day</span><span>Night</span><span>💩</span></div>
@@ -409,7 +416,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.0 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.1 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -1114,10 +1121,13 @@ function renderCal(){
     const k=addDays(first,i), e=state.entries[k];
     let cls='c';
     if(k>todayKey()) cls+=' future';
-    else if(hasSym(e)) cls += rough(e)?' bad':(['day','night','poop'].some(f=>e[f]==='good')?' good':' ok');
     if(k===todayKey()) cls+=' today';
+    const slice=v=> v==='good'?'var(--good)':v==='ok'?'var(--ok)':v==='bad'?'var(--bad)':'var(--none-soft)';
+    // pie, clockwise from 12 o'clock: ☀️ day, 🌙 night, 💩 poop
+    const pie = hasSym(e) ? `<span class="pie" style="background:conic-gradient(${slice(e.day)} 0 33.33%,${slice(e.night)} 0 66.66%,${slice(e.poop)} 0 100%)"></span>` : '';
+    if(pie) cls+=' has';
     const b=document.createElement('button'); b.className=cls;
-    b.innerHTML=`${i+1}${e&&e.closed?'<span class="st">✔</span>':''}${periodRun(k)?'<span class="pd"></span>':''}`;
+    b.innerHTML=`${pie}<span class="num">${i+1}</span>${e&&e.closed?'<span class="st">✔</span>':''}${periodRun(k)?'<span class="pd"></span>':''}`;
     if(k<=todayKey()) b.onclick=()=>{cur=k;show('log')}; else b.disabled=true;
     cal.appendChild(b);
   }
