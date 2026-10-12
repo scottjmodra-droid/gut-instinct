@@ -210,6 +210,7 @@ details[open] summary{margin-bottom:8px}
 .bar{height:10px;border-radius:5px;background:var(--none-soft);overflow:hidden}
 .bar i{display:block;height:100%;border-radius:5px}
 .bar i.w{background:var(--bad)}
+.bar i.g{background:var(--good)}
 .bar i.wo{background:var(--muted);opacity:.55}
 .pct{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
 .bars .grp{grid-column:1/-1;font-weight:600;color:var(--ink);margin-top:6px;font-size:12px}
@@ -367,7 +368,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="card" id="cluesCircs" hidden></div>
     <div class="card" id="trialCard"></div>
     <div class="stats" id="stats"></div>
-    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is any 😣 rating. For exercise and water, it's <i>skipping them</i> that's investigated. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
+    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is any 😣 rating. For exercise and water, Clues looks for a benefit the same day, the next day, or after 2–3 days in a row. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
   </section>
 
   <!-- CASE FILE -->
@@ -431,7 +432,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.5 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.6 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -446,8 +447,8 @@ const DEFAULT_FOODS = [
 const MAX_FOODS = 15;
 const DEFAULT_CIRCS = [
   {id:'period',name:'Period',emoji:'📅'},
-  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,miss:'Skipping exercise',onL:'when skipped',offL:'when exercised'},
-  {id:'water',name:'Enough water',emoji:'💧',helps:true,miss:'Not enough water',onL:'without enough water',offL:'with enough water'}
+  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,show:'Exercise',phr:{same:['when you exercised','when you didn\'t'],next:['the day after exercising','the day after not exercising'],build:['after exercising on 2+ of the previous 3 days','otherwise']}},
+  {id:'water',name:'Enough water',emoji:'💧',helps:true,show:'Enough water',phr:{same:['when you drank enough water','when you didn\'t'],next:['the day after drinking enough water','the day after not'],build:['after enough water on 2+ of the previous 3 days','otherwise']}}
 ];
 const SYMS = [
   // night is logged the morning after, but saved against the previous day (the day the food was eaten)
@@ -473,7 +474,7 @@ function ensureDefaults(s){
 }
 ensureDefaults(state);
 // v2.3: exercise + water are 'helpers' — in Clues it's going without them that's investigated
-state.circs.forEach(c=>{ const d=DEFAULT_CIRCS.find(x=>x.id===c.id); if(d && d.helps){ c.helps=true; c.miss=d.miss; c.onL=d.onL; c.offL=d.offL; } });
+state.circs.forEach(c=>{ const d=DEFAULT_CIRCS.find(x=>x.id===c.id); if(d && d.helps){ c.helps=true; c.show=d.show; c.phr=d.phr; delete c.miss; delete c.onL; delete c.offL; } });
 { const p=state.circs.find(c=>c.id==='period'); if(p && p.emoji==='🩸'){ p.emoji='📅'; try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} } }
 if(!state.startedAt){ state.startedAt=Date.now(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} }
 let cur = todayKey();
@@ -710,6 +711,29 @@ function analyseFoods(keys, withSym){
       wN: win==='same' ? sameW.length : nW.length};
   }).filter(r=>r.used || !r.f.hidden);
 }
+// helpers (exercise, water): look for a benefit the same day, the next day, or after a build-up over 3 days
+function helperRow(c, keys, withSym){
+  const did = k => hasCirc(k,c);
+  const E = k => state.entries[k];
+  const windows = {
+    same:  k => did(k),
+    next:  k => did(addDays(k,-1)),
+    build: k => [1,2,3].filter(i=>did(addDays(k,-i))).length>=2
+  };
+  let best=null;
+  Object.entries(windows).forEach(([w,fn])=>{
+    const W=withSym.filter(fn), Wo=withSym.filter(k=>!fn(k));
+    if(W.length<MIN || Wo.length<MIN) return;
+    const rw=rate(W.map(E)), rwo=rate(Wo.map(E)), gain=rwo-rw;   // positive = fewer rough days with it
+    if(!best || gain>best.gain) best={w,gain,rw,rwo,nW:W.length,nWo:Wo.length};
+  });
+  const n=withSym.filter(did).length;
+  let v;
+  if(!best) v={c:'v-na',t:'Needs more evidence',o:0};
+  else if(best.gain>=0.10) v={c:'v-inn',t:'💪 Seems to help',o:2};
+  else v={c:'v-na',t:'No clear link',o:1};
+  return {c,n,v,best,helper:true,label:c.show||c.name,em:c.emoji||'📌',used:n>0,d:best?best.gain:0};
+}
 let range = LOCAL.get('gutinstinct_range') || 'all';
 document.querySelectorAll('#range button').forEach(b=>b.onclick=()=>{ range=b.dataset.r; LOCAL.set('gutinstinct_range',range); renderClues(); });
 function renderClues(){
@@ -745,8 +769,8 @@ function renderClues(){
 
   // ---- circumstances
   const crow = state.circs.map(c=>{
-    // helpers (exercise, water): the suspect is going WITHOUT them
-    const on = k => c.helps ? !hasCirc(k,c) : hasCirc(k,c);
+    if(c.helps) return helperRow(c, keys, withSym);
+    const on = k => hasCirc(k,c);
     const W=withSym.filter(on).map(k=>state.entries[k]);
     const Wo=withSym.filter(k=>!on(k)).map(k=>state.entries[k]);
     const sw=rate(W), swo=rate(Wo), n=W.length;
@@ -756,7 +780,7 @@ function renderClues(){
     else if(Wo.length<MIN) v={c:'v-na',t:'Can\'t compare',o:0};
     else if(d>=0.10) v={c:'v-prime',t:'Accomplice',o:3};
     else v={c:'v-na',t:'No clear link',o:1};
-    const label = c.helps ? (c.miss||'Without '+c.name) : c.name;
+    const label = c.name;
     const em = c.emoji||'📌';
     return {c,n,sw,swo,v,d,label,em,wR:W.filter(rough).length,used:n>0};
   }).filter(r=>r.used || !r.c.hidden);
@@ -774,6 +798,9 @@ function renderClues(){
     H=`<div class="kick">The investigation</div><div class="hl">🕵️ No suspect stands out yet.</div>
        <div class="hl2">${judged.length?'So far the rough days aren\'t lining up with any one food. Keep logging.':'Most suspects need a few more days of evidence.'}</div>`;
   }
+  const helps = crow.filter(r=>r.helper && r.v.t.includes('help')).sort((a,b)=>b.d-a.d)[0];
+  if(helps){ const p=helps.c.phr||{}; const ph=(p[helps.best.w]||['with it','without'])[0];
+    H+=`<div class="hl2">💪 <b>Good news:</b> rough days drop from <b>${pct(helps.best.rwo)}</b> to <b>${pct(helps.best.rw)}</b> ${ph}.</div>`; }
   if(acc) H+=`<div class="hl2">Also: <b>${acc.em} ${esc(acc.label)}</b> lines up with rough days (${acc.wR} of ${acc.n} days).</div>`;
   const tt=state.trial; if(tt){ const tf=foodById(tt.id); if(tf) H+=`<div class="hl2">⚖️ ${esc(tf.emoji)} ${esc(tf.name)} is on trial — day ${Math.min(tt.days,daysBetween(tt.s,todayKey())+1)} of ${tt.days}.</div>`; }
   hl.innerHTML=H;
@@ -809,7 +836,22 @@ function renderClues(){
   const cj=crow.filter(r=>r.v.t!=='Needs more evidence'&&r.v.t!=='Can\'t compare');
   const cthin=crow.filter(r=>r.v.t==='Needs more evidence'||r.v.t==='Can\'t compare');
   cbox.hidden = !crow.length;
-  cbox.innerHTML = `<h2 style="margin-bottom:10px">Circumstances</h2>` + cj.map(r=>`
+  const crowHTML = r => {
+    if(r.helper){
+      const p=(r.c.phr||{})[r.best?r.best.w:'same']||['with it','without it'];
+      return `<div class="suspect">
+      <div class="row1">
+        <span class="name">${r.em} ${esc(r.label)} <span class="hidden-tag">· ${r.n} day${r.n===1?'':'s'}</span></span>
+        <span class="verdict ${r.v.c}">${r.v.t}</span>
+      </div>
+      <div class="cmp">
+        <span class="cl">Rough days ${p[0]}</span>${bar(r.best.rw,'g')}<span class="pct">${pct(r.best.rw)}</span>
+        <span class="cl">Rough days ${p[1]}</span>${bar(r.best.rwo,'wo')}<span class="pct">${pct(r.best.rwo)}</span>
+      </div></div>`;
+    }
+    return null;
+  };
+  cbox.innerHTML = `<h2 style="margin-bottom:10px">Circumstances</h2>` + cj.map(r=> crowHTML(r) || `
     <div class="suspect">
       <div class="row1">
         <span class="name">${r.em} ${esc(r.label)} <span class="hidden-tag">· ${r.n} day${r.n===1?'':'s'}</span></span>
