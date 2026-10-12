@@ -412,7 +412,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="card">
       <div class="calhead"><button id="calPrev" aria-label="Previous month">‹</button><h2 id="calTitle"></h2><button id="calNext" aria-label="Next month">›</button></div>
       <div class="cal" id="cal"></div>
-      <div class="callegend"><span><i class="lg logged"></i>logged</span><span><b class="mini">✔</b> evidence filed</span><span>tap a day to open it</span></div>
+      <div class="callegend"><span><i class="lg logged"></i>logged</span><span>tap a day to open it</span></div>
     </div>
     <div class="card">
       <h2 style="margin-bottom:4px">The look</h2>
@@ -463,7 +463,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.12 · 13 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.13 · 13 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -1278,7 +1278,7 @@ function renderCal(){
     if(k===todayKey()) cls+=' today';
     if(e && (hasSym(e) || e.foods.length || (e.circs||[]).length)) cls+=' logged';
     const b=document.createElement('button'); b.className=cls;
-    b.innerHTML=`<span class="num">${i+1}</span>${e&&e.closed?'<span class="st">✔</span>':''}`;
+    b.innerHTML=`<span class="num">${i+1}</span>`;
     if(k<=todayKey()) b.onclick=()=>{cur=k;show('log')}; else b.disabled=true;
     cal.appendChild(b);
   }
