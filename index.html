@@ -200,6 +200,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 body.reporting > *:not(#report){display:none!important}
 body.reporting{padding-bottom:0}
 @media print{ body > *:not(#report){display:none!important} .report{position:static;padding:0} .report .rbar{display:none} body{background:#fff;padding:0} }
+.datecard,[data-theme] .card.datecard{position:sticky;top:calc(6px + env(safe-area-inset-top));z-index:4;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.datecard .datenav button{width:40px;height:40px}
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -331,7 +333,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 
     <div class="banner trialbn" id="trialBanner" hidden></div>
 
-    <div class="card">
+    <div class="card datecard">
       <div class="datenav">
         <button id="prev" aria-label="Previous day">‹</button>
         <div class="datelabel"><b id="dlabel"></b><span class="dsub" id="dsub"></span><span class="saved" id="saved"></span></div>
@@ -456,7 +458,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.9 · 13 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.10 · 13 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
