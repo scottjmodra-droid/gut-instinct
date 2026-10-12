@@ -117,7 +117,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .modal .primary{margin-top:14px}
 .modal .tapnote{font-size:12px;color:var(--muted);margin-top:14px}
 .stamp{display:inline-block;font-family:"Special Elite","Courier New",monospace;font-size:34px;color:var(--accent);border:4px solid var(--accent);border-radius:8px;padding:6px 16px;transform:rotate(-8deg);margin:18px 0 14px;letter-spacing:.06em;animation:stampIn .45s cubic-bezier(.2,1.6,.4,1) both;mix-blend-mode:multiply}
-[data-theme="noir"] .stamp{mix-blend-mode:normal;border:0;transform:none;color:var(--ink);font-size:30px;text-transform:uppercase;letter-spacing:.14em;animation:typeIn .9s steps(12) both;overflow:hidden;white-space:nowrap;border-right:3px solid var(--accent);padding:0 4px}
+[data-theme="noir"] .stamp{mix-blend-mode:normal;border:0;transform:none;color:var(--ink);font-size:23px;text-transform:uppercase;letter-spacing:.1em;animation:typeIn .9s steps(15) both;overflow:hidden;white-space:nowrap;border-right:3px solid var(--accent);padding:0 4px}
 @keyframes stampIn{0%{transform:scale(2.6) rotate(-14deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(-8deg);opacity:1}}
 @keyframes typeIn{from{max-width:0}to{max-width:100%}}
 .pun{font-style:italic;color:var(--muted)}
@@ -337,7 +337,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 
     <div class="card closebox">
       <div class="prog" id="prog"></div>
-      <button class="primary" id="closeCase">Close the case</button>
+      <button class="primary" id="closeCase">File the evidence</button>
       <div class="closednote" id="closedNote"></div>
     </div>
   </section>
@@ -363,7 +363,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
       <div class="calhead"><button id="calPrev" aria-label="Previous month">‹</button><h2 id="calTitle"></h2><button id="calNext" aria-label="Next month">›</button></div>
       <div class="cal" id="cal"></div>
       <div class="callegend"><span class="pielg"><i class="minipie"></i>clockwise from top: ☀️ Day · 🌙 Night · 💩</span></div>
-      <div class="callegend" style="margin-top:4px"><span><i class="lg good"></i>good</span><span><i class="lg ok"></i>ok</span><span><i class="lg bad"></i>bad</span><span><b class="mini">✔</b> closed</span><span><i class="pdot"></i>period</span></div>
+      <div class="callegend" style="margin-top:4px"><span><i class="lg good"></i>good</span><span><i class="lg ok"></i>ok</span><span><i class="lg bad"></i>bad</span><span><b class="mini">✔</b> filed</span><span><i class="pdot"></i>period</span></div>
     </div>
     <div class="card">
       <div class="legend"><span>Day</span><span>Night</span><span>💩</span></div>
@@ -416,7 +416,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.1 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.2 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -908,7 +908,7 @@ document.getElementById('sheetBg').onclick=e=>{if(e.target.id==='sheetBg')closeS
 
 // ================= GAME LAYER =================
 const RANKS=[[0,'Rookie','🔰'],[3,'Constable','👮'],[7,'Detective','🕵️'],[14,'Inspector','🔍'],[30,'Chief Inspector','🎖️'],[60,'Superintendent','⭐'],[100,'Sherlock','🎩']];
-const PUNS=['The stomach never lies.','Elementary, my dear gut.','Another day, another clue.','The plot thickens… like gravy.','Case closed. Kettle on.','Your gut has been heard.','Evidence logged. The culprit grows nervous.','No stone unturned. No crumb either.','Somebody\'s guilty. Just a matter of time.','The truth is in there somewhere.'];
+const PUNS=['The stomach never lies.','Elementary, my dear gut.','Another day, another clue.','The plot thickens… like gravy.','Evidence filed. Kettle on.','Your gut has been heard.','Evidence logged. The culprit grows nervous.','No stone unturned. No crumb either.','Somebody\'s guilty. Just a matter of time.','The truth is in there somewhere.'];
 const NOIR=['The city sleeps. Your gut doesn\'t.','Another night in this town. Another clue.','Somewhere out there, a garlic clove is sweating.','In this business, everybody\'s a suspect.','The rain kept falling. So did the evidence.'];
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const daysBetween=(a,b)=>Math.round((parseKey(b)-parseKey(a))/86400000);
@@ -941,24 +941,24 @@ function nextModal(){
   bg.onclick=ev=>{ const a=ev.target.closest('[data-act]'); if(a){ const act=a.dataset.act; if(act==='clues'){ mq.length=0; bg.classList.remove('on'); mOpen=false; show('clues'); return; } close(); } else if(ev.target===bg || ev.target.closest('.tapclose')) close(); };
 }
 
-// ---- Close the case
+// ---- File the evidence (daily)
 function renderClose(){
   const e=entry(cur), prevNight=entry(addDays(cur,-1)).night;
   const items=[['Suspects',e.foods.length>0||!!(e.foodNote||'').trim()],['🌙 Last night',!!prevNight],['☀️ Today',!!e.day],['💩',!!e.poop]];
   document.getElementById('prog').innerHTML=items.map(([t,d])=>`<span class="${d?'done':''}">${d?'✓ ':''}${t}</span>`).join('');
   const btn=document.getElementById('closeCase');
-  btn.textContent = e.closed ? '✔ Case closed · re-close' : 'Close the case';
+  btn.textContent = e.closed ? '✔ Evidence filed · re-file' : 'File the evidence';
   btn.classList.toggle('closed',!!e.closed);
   const missing=items.filter(i=>!i[1]).length;
-  document.getElementById('closedNote').textContent = e.closed ? 'Changed something? Close it again, or just carry on.' : (missing ? `${missing} piece${missing>1?'s':''} of evidence still missing — you can close it anyway.` : 'All evidence in. Ready to close.');
+  document.getElementById('closedNote').textContent = e.closed ? 'Changed something? File it again, or just carry on.' : (missing ? `${missing} piece${missing>1?'s':''} of evidence still missing — you can file it anyway.` : 'All evidence in. Ready to file.');
 }
 document.getElementById('closeCase').onclick=()=>{
   const x=entry(cur); const was=!!x.closed; x.closed=true; x.closedAt=Date.now(); setEntry(cur,x); renderLog();
   const noir=document.documentElement.dataset.theme==='noir';
-  queueModal(`<div class="stamp">${noir?'Case filed.':'CASE CLOSED'}</div>
+  queueModal(`<div class="stamp">${noir?'Evidence filed.':'EVIDENCE FILED'}</div>
     <p><b>${niceDate(cur)}</b>${cur===todayKey()||cur===addDays(todayKey(),-1)?' · '+shortDate(cur):''}</p>
     <p class="pun">${pick(noir?NOIR.concat(PUNS):PUNS)}</p>
-    <p class="sub">${was?'Case file updated.':`🔥 ${streak()}-day streak · ${RANKS[rankIndex(totalCounted())][2]} ${RANKS[rankIndex(totalCounted())][1]}`}</p>
+    <p class="sub">${was?'Evidence updated.':`🔥 ${streak()}-day streak · ${RANKS[rankIndex(totalCounted())][2]} ${RANKS[rankIndex(totalCounted())][1]}`}</p>
     <div class="tapnote tapclose">tap to continue</div>`);
   checkMilestones();
 };
@@ -1023,6 +1023,7 @@ function checkTrial(){
   const em={Guilty:'🔨',Acquitted:'🕊️','Hung jury':'🤷',Mistrial:'📄'}[r.v];
   queueModal(`<div class="big">⚖️</div><h2>The verdict is in</h2><p><b>${esc(f.emoji)} ${esc(f.name)}</b></p>
     <div class="stamp" style="font-size:30px">${em} ${r.v.toUpperCase()}</div><p>${r.why}</p>
+    ${r.v==='Guilty'?`<div class="stamp" style="animation-delay:.6s">CASE CLOSED</div><p class="pun">${esc(f.name)} has been found responsible. Justice is served — just not on your plate.</p>`:''}
     <p class="sub">One trial is a strong hint, not proof — other things (period, stress) can sway a fortnight.</p>
     <button class="primary" data-act="ok">Noted</button>`);
 }
