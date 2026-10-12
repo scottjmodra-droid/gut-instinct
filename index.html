@@ -165,6 +165,19 @@ button{font:inherit;color:inherit;cursor:pointer}
 .verdicts{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
 .verdicts div{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;gap:8px}
 .chip .tr{font-size:10px;color:var(--bad);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.headline{border-width:2px}
+.headline .hl{font-size:16px;line-height:1.45}
+.headline .hl b{font-weight:700}
+.headline .hl2{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.4}
+.headline .kick{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin-bottom:6px}
+.cmp{display:grid;grid-template-columns:92px 1fr 40px;gap:4px 8px;align-items:center;font-size:12px;color:var(--muted)}
+.suspect.tap{cursor:pointer}
+.suspect .more{display:none;margin-top:10px}
+.suspect.open .more{display:block}
+.suspect .chev{font-size:11px;color:var(--muted);margin-top:6px}
+.waiting{font-size:13px;color:var(--muted);padding-top:10px;border-top:1px solid var(--line);margin-top:4px;line-height:1.5}
+.waiting:first-child{border-top:0;padding-top:0;margin-top:0}
+.waiting b{color:var(--ink);font-weight:600}
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -345,14 +358,15 @@ nav.tabs button.on .e{filter:none;opacity:1}
   <!-- CLUES -->
   <section id="v-clues" class="view">
     <header class="top"><h1>Clues</h1><span class="sub">who's the culprit?</span></header>
-    <div class="card" id="trialCard"></div>
     <div class="seg" id="range">
       <button data-r="14">2 weeks</button><button data-r="30">30 days</button><button data-r="all">All time</button>
     </div>
-    <div class="stats" id="stats"></div>
+    <div class="card headline" id="headline"></div>
     <div class="card" id="clues"></div>
     <div class="card" id="cluesCircs" hidden></div>
-    <p class="note" style="padding:0 4px">A <b>rough day</b> = stomach (day or night) or poop rated 😣 bad. <b>Circumstances</b> are checked the same way: an <i>accomplice</i> lines up with more rough days. For exercise and water it's <i>going without</i> that's investigated. Each suspect compares rough days <i>when eaten</i> vs <i>when not</i> — same day, and the day after (reactions can lag). Foods that often travel together (garlic + onion, say) will share the blame; try cutting one at a time to separate them. This spots patterns, not diagnoses.</p>
+    <div class="card" id="trialCard"></div>
+    <div class="stats" id="stats"></div>
+    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is any 😣 rating. For exercise and water, it's <i>going without</i> that's investigated. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
   </section>
 
   <!-- CASE FILE -->
@@ -416,7 +430,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.3 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.4 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -689,7 +703,10 @@ function analyseFoods(keys, withSym){
     else if(best>=0.25) v={c:'v-prime',t:'Prime suspect',o:4};
     else if(best>=0.10) v={c:'v-poi',t:'Person of interest',o:3};
     else v={c:'v-inn',t:'Looks innocent',o:2};
-    return {f,n,sw,swo,nw,nwo,v,best,used:n>0};
+    const win = (d2!=null && (d1==null || d2>d1)) ? 'next' : 'same';
+    return {f,n,sw,swo,nw,nwo,v,best,used:n>0,win,
+      wR: win==='same' ? sameW.filter(rough).length : nW.filter(rough).length,
+      wN: win==='same' ? sameW.length : nW.length};
   }).filter(r=>r.used || !r.f.hidden);
 }
 let range = LOCAL.get('gutinstinct_range') || 'all';
@@ -706,37 +723,26 @@ function renderClues(){
     <div class="stat"><b>${roughN}</b><span>rough days</span></div>
     <div class="stat"><b>${withSym.length?Math.round(roughN/withSym.length*100)+'%':'–'}</b><span>rough-day rate</span></div>`;
 
-  const box=document.getElementById('clues');
-  if(withSym.length<3){
-    document.getElementById('cluesCircs').hidden=true;
-    box.innerHTML=`<div class="sub" style="text-align:center;padding:20px 0">🕵️ Not enough evidence yet.<br>Log a few more days and the suspects will start to show their hand.</div>`;
-    return;
-  }
-
-  const rows = analyseFoods(keys, withSym);
-  rows.sort((a,b)=> b.v.o-a.v.o || b.best-a.best || b.n-a.n);
-
+  const box=document.getElementById('clues'), hl=document.getElementById('headline'), cbox=document.getElementById('cluesCircs');
   const pct=x=>x==null?'–':Math.round(x*100)+'%';
   const bar=(x,cls)=>`<div class="bar"><i class="${cls}" style="width:${x==null?0:Math.max(2,x*100)}%"></i></div>`;
-  box.innerHTML = rows.map(r=>`
-    <div class="suspect">
-      <div class="row1">
-        <span class="name">${esc(r.f.emoji||'🍽️')} ${esc(r.f.name)} <span class="hidden-tag">· eaten ${r.n} day${r.n===1?'':'s'}</span></span>
-        <span class="verdict ${r.v.c}">${r.v.t}</span>
-      </div>
-      ${r.v.why? `<p class="note" style="margin:0 0 8px">${r.v.why}</p>`:''}
-      ${r.n? `<div class="bars">
-        <div class="grp">Rough same day</div>
-        <span>when eaten</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
-        <span>when not</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
-        <div class="grp">Rough next day</div>
-        <span>after eating</span>${bar(r.nw,'w')}<span class="pct">${pct(r.nw)}</span>
-        <span>after not</span>${bar(r.nwo,'wo')}<span class="pct">${pct(r.nwo)}</span>
-      </div>`:''}
-    </div>`).join('');
+  const usual = withSym.length ? roughN/withSym.length : null;
 
-  // circumstances: same-day comparison
-  const cbox=document.getElementById('cluesCircs');
+  if(withSym.length<3){
+    cbox.hidden=true; box.hidden=true;
+    hl.innerHTML=`<div class="kick">The investigation</div><div class="hl">🕵️ Not enough evidence yet.</div><div class="hl2">Log ${3-withSym.length} more day${3-withSym.length===1?'':'s'} and the suspects will start to show their hand. Patterns get reliable after 2–3 weeks.</div>`;
+    return;
+  }
+  box.hidden=false;
+
+  // ---- suspects
+  const rows = analyseFoods(keys, withSym);
+  rows.sort((a,b)=> b.v.o-a.v.o || b.best-a.best || b.n-a.n);
+  const judged = rows.filter(r=>r.v.c!=='v-na');
+  const thin   = rows.filter(r=>r.v.t==='Needs more evidence');
+  const always = rows.filter(r=>r.v.t==='No alibi days');
+
+  // ---- circumstances
   const crow = state.circs.map(c=>{
     // helpers (exercise, water): the suspect is going WITHOUT them
     const on = k => c.helps ? !hasCirc(k,c) : hasCirc(k,c);
@@ -746,26 +752,75 @@ function renderClues(){
     const d = sw!=null&&swo!=null ? sw-swo : 0;
     let v;
     if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:0};
-    else if(Wo.length<MIN) v={c:'v-na',t:c.helps?'Rarely ticked':'Every day',o:0,why: c.helps ? 'Hardly any days with it ticked yet, so there\'s nothing to compare against.' : 'Ticked nearly every day, so there\'s nothing to compare against yet.'};
+    else if(Wo.length<MIN) v={c:'v-na',t:'Can\'t compare',o:0};
     else if(d>=0.10) v={c:'v-prime',t:'Accomplice',o:3};
     else if(d<=-0.10) v={c:'v-inn',t:'Looks innocent',o:2};
     else v={c:'v-na',t:'No clear effect',o:1};
-    return {c,n,sw,swo,v,d,used:n>0};
+    const label = c.helps ? (c.miss||'Without '+c.name) : c.name;
+    const em = c.helps ? '🚫' : (c.emoji||'📌');
+    return {c,n,sw,swo,v,d,label,em,wR:W.filter(rough).length,used:n>0};
   }).filter(r=>r.used || !r.c.hidden);
   crow.sort((a,b)=> b.v.o-a.v.o || Math.abs(b.d)-Math.abs(a.d));
-  cbox.hidden = !crow.length;
-  cbox.innerHTML = `<h2 style="margin-bottom:10px">Circumstances</h2>` + crow.map(r=>`
-    <div class="suspect">
+
+  // ---- headline
+  const top = judged.find(r=>r.v.c==='v-prime') || judged.find(r=>r.v.c==='v-poi');
+  const acc = crow.find(r=>r.v.t==='Accomplice');
+  const when = r => r.win==='next' ? 'the day after eating it' : 'on days you ate it';
+  let H;
+  if(top){
+    H=`<div class="kick">${top.v.c==='v-prime'?'Prime suspect':'Person of interest'}</div>
+       <div class="hl">🔍 <b>${esc(top.f.emoji)} ${esc(top.f.name)}</b>. You had a rough day <b>${top.wR} of ${top.wN} times</b> ${when(top)}, compared with <b>${pct(usual)}</b> of days overall.</div>`;
+  } else {
+    H=`<div class="kick">The investigation</div><div class="hl">🕵️ No suspect stands out yet.</div>
+       <div class="hl2">${judged.length?'So far the rough days aren\'t lining up with any one food. Keep logging.':'Most suspects need a few more days of evidence.'}</div>`;
+  }
+  if(acc) H+=`<div class="hl2">Also: <b>${acc.em} ${esc(acc.label)}</b> lines up with rough days (${acc.wR} of ${acc.n} days).</div>`;
+  const tt=state.trial; if(tt){ const tf=foodById(tt.id); if(tf) H+=`<div class="hl2">⚖️ ${esc(tf.emoji)} ${esc(tf.name)} is on trial — day ${Math.min(tt.days,daysBetween(tt.s,todayKey())+1)} of ${tt.days}.</div>`; }
+  hl.innerHTML=H;
+
+  // ---- suspect cards: judged ones get one simple comparison, tap for details
+  const names = list => list.map(r=>`${esc(r.f.emoji)} ${esc(r.f.name)}`).join(', ');
+  box.innerHTML = `<h2 style="margin-bottom:10px">Suspects</h2>` + judged.map(r=>`
+    <div class="suspect tap">
       <div class="row1">
-        <span class="name">${r.c.helps?'🚫':esc(r.c.emoji||'📌')} ${esc(r.c.helps?(r.c.miss||'Without '+r.c.name):r.c.name)} <span class="hidden-tag">· ${r.n} day${r.n===1?'':'s'}</span></span>
+        <span class="name">${esc(r.f.emoji||'🍽️')} ${esc(r.f.name)} <span class="hidden-tag">· eaten ${r.n} day${r.n===1?'':'s'}</span></span>
         <span class="verdict ${r.v.c}">${r.v.t}</span>
       </div>
-      ${r.v.why? `<p class="note" style="margin:0 0 8px">${r.v.why}</p>`:''}
-      ${r.n? `<div class="bars">
+      <div class="cmp">
+        <span>${r.win==='next'?'day after eating':'when eaten'}</span>${bar(r.win==='next'?r.nw:r.sw,'w')}<span class="pct">${pct(r.win==='next'?r.nw:r.sw)}</span>
+        <span>usual</span>${bar(usual,'wo')}<span class="pct">${pct(usual)}</span>
+      </div>
+      <div class="more"><div class="bars">
+        <div class="grp">Rough same day</div>
+        <span>when eaten</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
+        <span>when not</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
+        <div class="grp">Rough next day</div>
+        <span>after eating</span>${bar(r.nw,'w')}<span class="pct">${pct(r.nw)}</span>
+        <span>after not</span>${bar(r.nwo,'wo')}<span class="pct">${pct(r.nwo)}</span>
+      </div></div>
+      <div class="chev">Tap for details ▾</div>
+    </div>`).join('')
+    + (thin.length?`<div class="waiting">⏳ <b>Not enough evidence yet:</b> ${names(thin)}</div>`:'')
+    + (always.length?`<div class="waiting">♾️ <b>Eaten almost every day</b> (nothing to compare against): ${names(always)}. Try a few days without.</div>`:'')
+    + (!judged.length&&!thin.length&&!always.length?'<div class="waiting">No suspects logged yet.</div>':'');
+  box.querySelectorAll('.suspect.tap').forEach(el=>el.onclick=()=>{ el.classList.toggle('open'); el.querySelector('.chev').textContent = el.classList.contains('open')?'Hide details ▴':'Tap for details ▾'; });
+
+  // ---- circumstance card
+  const cj=crow.filter(r=>r.v.t!=='Needs more evidence'&&r.v.t!=='Can\'t compare');
+  const cthin=crow.filter(r=>r.v.t==='Needs more evidence'||r.v.t==='Can\'t compare');
+  cbox.hidden = !crow.length;
+  cbox.innerHTML = `<h2 style="margin-bottom:10px">Circumstances</h2>` + cj.map(r=>`
+    <div class="suspect">
+      <div class="row1">
+        <span class="name">${r.em} ${esc(r.label)} <span class="hidden-tag">· ${r.n} day${r.n===1?'':'s'}</span></span>
+        <span class="verdict ${r.v.c}">${r.v.t}</span>
+      </div>
+      <div class="cmp">
         <span>${r.c.helps?'days without':'on those days'}</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
         <span>${r.c.helps?'days with':'other days'}</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
-      </div>`:''}
-    </div>`).join('');
+      </div>
+    </div>`).join('')
+    + (cthin.length?`<div class="waiting">⏳ <b>Not enough evidence yet:</b> ${cthin.map(r=>`${r.em} ${esc(r.label)}`).join(', ')}</div>`:'');
 }
 
 // ---- CASE FILE
