@@ -152,6 +152,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .cal .c .pd{position:absolute;top:3px;left:3px;width:6px;height:6px;border-radius:50%;background:var(--accent);z-index:2;box-shadow:0 0 0 1.5px var(--card)}
 .callegend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;font-size:12px;color:var(--muted);margin-top:10px}
 .callegend .lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.lg.logged{background:var(--accent-soft);border:1px solid var(--accent)}
+.cal .c.logged{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
 .lg.good{background:var(--good)}.lg.ok{background:var(--ok)}.lg.bad{background:var(--bad)}
 .mini{color:var(--accent)}
 .minipie{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:5px;vertical-align:-3px;background:conic-gradient(var(--good) 0 33.33%,var(--bad) 0 66.66%,var(--ok) 0 100%)}
@@ -185,6 +187,19 @@ button{font:inherit;color:inherit;cursor:pointer}
 .waiting{font-size:13px;color:var(--muted);padding-top:10px;border-top:1px solid var(--line);margin-top:4px;line-height:1.5}
 .waiting:first-child{border-top:0;padding-top:0;margin-top:0}
 .waiting b{color:var(--ink);font-weight:600}
+.report{position:relative;z-index:30;min-height:100vh;background:#fff;color:#222;overflow:auto;padding:20px 18px 40px;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.report .rbar{display:flex;gap:8px;position:sticky;top:0;background:#fff;padding:10px 0;margin:-10px 0 10px;border-bottom:1px solid #ddd}
+.report .rbar button{flex:1;padding:10px;border-radius:10px;border:1px solid #bbb;background:#fff;font-weight:600;color:#222}
+.report .rbar button.pr{background:#222;color:#fff;border-color:#222}
+.report h1{font:700 22px Georgia,serif;margin:0 0 2px;white-space:normal;display:block}
+.report h3{font:700 15px -apple-system,sans-serif;margin:18px 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px}
+.report table{width:100%;border-collapse:collapse;font-size:12.5px}
+.report th,.report td{text-align:left;padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top}
+.report th{color:#555;font-weight:600}
+.report .muted{color:#666;font-size:12px}
+body.reporting > *:not(#report){display:none!important}
+body.reporting{padding-bottom:0}
+@media print{ body > *:not(#report){display:none!important} .report{position:static;padding:0} .report .rbar{display:none} body{background:#fff;padding:0} }
 .maxnote{font-size:13px;color:var(--muted);text-align:center;padding:12px 0 4px}
 .sym .lbl small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .opts{display:flex;gap:6px;flex:1}
@@ -367,7 +382,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
   <section id="v-clues" class="view">
     <header class="top"><h1>Clues</h1><span class="sub">who's the culprit?</span></header>
     <div class="seg" id="range">
-      <button data-r="14">2 weeks</button><button data-r="30">30 days</button><button data-r="all">All time</button>
+      <button data-r="30">Last 30 days</button><button data-r="all">All time</button>
     </div>
     <div class="card headline" id="headline"></div>
     <div class="card" id="clues"></div>
@@ -382,14 +397,15 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <header class="top"><h1>Case file</h1><span class="sub">tap a day to edit</span></header>
     <div class="card rankcard" id="rankCard"></div>
     <div class="card">
-      <div class="calhead"><button id="calPrev" aria-label="Previous month">‹</button><h2 id="calTitle"></h2><button id="calNext" aria-label="Next month">›</button></div>
-      <div class="cal" id="cal"></div>
-      <div class="callegend"><span class="pielg"><i class="minipie"></i>clockwise from top: ☀️ Day · 🌙 Night · 💩</span></div>
-      <div class="callegend" style="margin-top:4px"><span><i class="lg good"></i>good</span><span><i class="lg ok"></i>ok</span><span><i class="lg bad"></i>bad</span><span><b class="mini">✔</b> filed</span><span><i class="pdot"></i>period</span></div>
-    </div>
-    <div class="card">
       <div class="legend"><span>Day</span><span>Night</span><span>💩</span></div>
       <div id="history"></div>
+      <button class="linkbtn" id="histMore" style="display:block;margin:10px auto 0" hidden></button>
+      <div class="sub" id="histNote" style="text-align:center;margin-top:4px"></div>
+    </div>
+    <div class="card">
+      <div class="calhead"><button id="calPrev" aria-label="Previous month">‹</button><h2 id="calTitle"></h2><button id="calNext" aria-label="Next month">›</button></div>
+      <div class="cal" id="cal"></div>
+      <div class="callegend"><span><i class="lg logged"></i>logged</span><span><b class="mini">✔</b> evidence filed</span><span>tap a day to open it</span></div>
     </div>
     <div class="card">
       <h2 style="margin-bottom:4px">The look</h2>
@@ -401,9 +417,10 @@ nav.tabs button.on .e{filter:none;opacity:1}
     </div>
     <div class="card">
       <h2 style="margin-bottom:4px">Export &amp; backup</h2>
-      <div class="sub">Data lives only on this phone. Back it up now and then (save it to Files or email it to yourself), or send the CSV to a GP / dietitian.</div>
+      <div class="sub">Data lives only on this phone. Back it up now and then (save it to Files or email it to yourself). The GP report is a one-page summary you can print or save as a PDF.</div>
       <div class="lastbk" id="lastBackup"></div>
-      <button class="primary" id="csvBtn" style="margin-top:12px">Export CSV</button>
+      <button class="primary" id="reportBtn" style="margin-top:12px">📄 Report for your GP</button>
+      <button class="secondary" id="csvBtn" style="margin-top:8px">Export CSV (spreadsheet)</button>
       <div class="btnrow">
         <button class="secondary" id="backupBtn">Backup file</button>
         <button class="secondary" id="restoreBtn">Restore</button>
@@ -420,6 +437,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
   <button data-v="file"><span class="e">🗂️</span>Case file</button>
 </div></nav>
 
+<div class="report" id="report" hidden></div>
 <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
 
 <!-- edit suspects sheet -->
@@ -438,7 +456,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.8 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.9 · 13 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -454,7 +472,9 @@ const MAX_FOODS = 15;
 const DEFAULT_CIRCS = [
   {id:'period',name:'Period',emoji:'📅'},
   {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,show:'Exercise',phr:{same:['when you exercised','when you didn\'t'],next:['the day after exercising','the day after not exercising'],build:['within 3 days of exercising','otherwise']}},
-  {id:'water',name:'Enough water',emoji:'💧',helps:true,show:'Enough water',phr:{same:['when you drank enough water','when you didn\'t'],next:['the day after drinking enough water','the day after not'],build:['within 3 days of drinking enough water','otherwise']}}
+  {id:'water',name:'Enough water',emoji:'💧',helps:true,show:'Enough water',phr:{same:['when you drank enough water','when you didn\'t'],next:['the day after drinking enough water','the day after not'],build:['within 3 days of drinking enough water','otherwise']}},
+  {id:'stress',name:'Stressed',emoji:'😫',hidden:true},
+  {id:'sleep',name:'Slept badly',emoji:'😴',hidden:true}
 ];
 const SYMS = [
   // night is logged the morning after, but saved against the previous day (the day the food was eaten)
@@ -743,7 +763,27 @@ function helperRow(c, keys, withSym){
   else v={c:'v-na',t:'No clear link',o:1};
   return {c,n,v,best,helper:true,label:c.show||c.name,em:c.emoji||'📌',used:n>0,d:best?best.gain:0};
 }
-let range = LOCAL.get('gutinstinct_range') || 'all';
+function circRows(keys, withSym){
+  const crow = state.circs.map(c=>{
+    if(c.helps) return helperRow(c, keys, withSym);
+    const on = k => hasCirc(k,c);
+    const W=withSym.filter(on).map(k=>state.entries[k]);
+    const Wo=withSym.filter(k=>!on(k)).map(k=>state.entries[k]);
+    const sw=rate(W), swo=rate(Wo), n=W.length;
+    const d = sw!=null&&swo!=null ? sw-swo : 0;
+    let v;
+    if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:0};
+    else if(Wo.length<MIN) v={c:'v-na',t:'Can\'t compare',o:0};
+    else if(d>=0.10) v={c:'v-prime',t:early()?'Early lead':'Accomplice',o:3};
+    else v={c:'v-na',t:'No clear link',o:1};
+    const label = c.name;
+    const em = c.emoji||'📌';
+    return {c,n,sw,swo,v,d,label,em,wR:W.filter(rough).length,used:n>0};
+  }).filter(r=>r.used || !r.c.hidden);
+  crow.sort((a,b)=> b.v.o-a.v.o || Math.abs(b.d)-Math.abs(a.d));
+  return crow;
+}
+let range = LOCAL.get('gutinstinct_range') || 'all'; if(range==='14') range='30';
 document.querySelectorAll('#range button').forEach(b=>b.onclick=()=>{ range=b.dataset.r; LOCAL.set('gutinstinct_range',range); renderClues(); });
 function renderClues(){
   renderTrial();
@@ -777,23 +817,7 @@ function renderClues(){
   const always = rows.filter(r=>r.v.t==='No alibi days');
 
   // ---- circumstances
-  const crow = state.circs.map(c=>{
-    if(c.helps) return helperRow(c, keys, withSym);
-    const on = k => hasCirc(k,c);
-    const W=withSym.filter(on).map(k=>state.entries[k]);
-    const Wo=withSym.filter(k=>!on(k)).map(k=>state.entries[k]);
-    const sw=rate(W), swo=rate(Wo), n=W.length;
-    const d = sw!=null&&swo!=null ? sw-swo : 0;
-    let v;
-    if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:0};
-    else if(Wo.length<MIN) v={c:'v-na',t:'Can\'t compare',o:0};
-    else if(d>=0.10) v={c:'v-prime',t:early()?'Early lead':'Accomplice',o:3};
-    else v={c:'v-na',t:'No clear link',o:1};
-    const label = c.name;
-    const em = c.emoji||'📌';
-    return {c,n,sw,swo,v,d,label,em,wR:W.filter(rough).length,used:n>0};
-  }).filter(r=>r.used || !r.c.hidden);
-  crow.sort((a,b)=> b.v.o-a.v.o || Math.abs(b.d)-Math.abs(a.d));
+  const crow = circRows(keys, withSym);
 
   // ---- headline
   const top = judged.find(r=>r.v.c==='v-prime') || judged.find(r=>r.v.c==='v-poi');
@@ -879,13 +903,19 @@ function renderClues(){
 }
 
 // ---- CASE FILE
+let histShown=7;
+document.getElementById('histMore').onclick=()=>{ histShown+=7; renderHistory(); };
 function renderHistory(){
   renderBackupInfo(); renderRank(); renderCal();
   const keys=Object.keys(state.entries).sort().reverse();
   const h=document.getElementById('history');
   if(!keys.length){ h.innerHTML='<div class="sub" style="text-align:center;padding:16px 0">No days logged yet.</div>'; return; }
   h.innerHTML='';
-  keys.forEach(k=>{
+  const more=document.getElementById('histMore'), note=document.getElementById('histNote');
+  more.hidden = keys.length<=histShown;
+  more.textContent = `Show ${Math.min(7,keys.length-histShown)} more ▾`;
+  note.textContent = keys.length>histShown ? `Showing ${histShown} of ${keys.length} days. For older days, use the calendar below.` : '';
+  keys.slice(0,histShown).forEach(k=>{
     const e=state.entries[k]; const d=parseKey(k);
     const b=document.createElement('button'); b.className='day';
     const foods=e.foods.map(id=>foodById(id)).filter(Boolean).map(f=>esc(f.emoji||'🍽️')).join('');
@@ -959,7 +989,7 @@ document.getElementById('restoreFile').onchange=ev=>{
 let editMode='foods';
 const EDIT = {
   foods:{title:'Edit suspects', protect:false, ph:'New suspect, e.g. Tomato', em:'🍽️', used:f=>Object.values(state.entries).some(e=>e.foods.includes(f.id))},
-  circs:{title:'Edit circumstances', protect:true, ph:'e.g. Stressed, Slept badly', em:'📌', used:c=> c.id==='period' ? state.periods.length>0 : Object.values(state.entries).some(e=>(e.circs||[]).includes(c.id))}
+  circs:{title:'Edit circumstances', protect:true, ph:'e.g. Ate late, Travelling', em:'📌', used:c=> c.id==='period' ? state.periods.length>0 : Object.values(state.entries).some(e=>(e.circs||[]).includes(c.id))}
 };
 const L = () => state[editMode];
 const activeCount = () => L().filter(x=>!x.hidden).length;
@@ -1239,12 +1269,9 @@ function renderCal(){
     let cls='c';
     if(k>todayKey()) cls+=' future';
     if(k===todayKey()) cls+=' today';
-    const slice=v=> v==='good'?'var(--good)':v==='ok'?'var(--ok)':v==='bad'?'var(--bad)':'var(--none-soft)';
-    // pie, clockwise from 12 o'clock: ☀️ day, 🌙 night, 💩 poop
-    const pie = hasSym(e) ? `<span class="pie" style="background:conic-gradient(${slice(e.day)} 0 33.33%,${slice(e.night)} 0 66.66%,${slice(e.poop)} 0 100%)"></span>` : '';
-    if(pie) cls+=' has';
+    if(e && (hasSym(e) || e.foods.length || (e.circs||[]).length)) cls+=' logged';
     const b=document.createElement('button'); b.className=cls;
-    b.innerHTML=`${pie}<span class="num">${i+1}</span>${e&&e.closed?'<span class="st">✔</span>':''}${periodRun(k)?'<span class="pd"></span>':''}`;
+    b.innerHTML=`<span class="num">${i+1}</span>${e&&e.closed?'<span class="st">✔</span>':''}`;
     if(k<=todayKey()) b.onclick=()=>{cur=k;show('log')}; else b.disabled=true;
     cal.appendChild(b);
   }
@@ -1252,11 +1279,49 @@ function renderCal(){
 document.getElementById('calPrev').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);renderCal();};
 document.getElementById('calNext').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);renderCal();};
 
+// ---- GP report (printable / save as PDF)
+function openReport(){
+  const keys=Object.keys(state.entries).sort(), withSym=keys.filter(k=>hasSym(state.entries[k]));
+  const fmt=k=>parseKey(k).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+  const pc=x=>x==null?'–':Math.round(x*100)+'%';
+  const roughN=withSym.filter(k=>rough(state.entries[k])).length;
+  const foods = withSym.length>=3 ? analyseFoods(keys,withSym).filter(r=>r.n>0).sort((a,b)=>b.v.o-a.v.o||b.best-a.best) : [];
+  const circs = withSym.length>=3 ? circRows(keys,withSym).filter(r=>r.n>0) : [];
+  const word={good:'Good',ok:'OK',bad:'Bad',none:'None'};
+  const last=withSym.slice(-30).reverse();
+  document.getElementById('report').innerHTML=`
+    <div class="rbar"><button onclick="closeReport()">← Back</button><button class="pr" onclick="window.print()">Print / Save as PDF</button></div>
+    <h1>Gut symptom log: summary</h1>
+    <div class="muted">${withSym.length?`${fmt(withSym[0])} – ${fmt(withSym[withSym.length-1])}`:'No days logged'} · generated ${fmt(todayKey())}</div>
+    <h3>Overview</h3>
+    <table><tr><td>Days logged</td><td><b>${withSym.length}</b></td></tr>
+    <tr><td>"Rough" days (stomach by day or night, or bowel movement, rated bad)</td><td><b>${roughN}</b> (${pc(withSym.length?roughN/withSym.length:null)})</td></tr></table>
+    <h3>Foods tracked</h3>
+    ${foods.length?`<table><tr><th>Food</th><th>Days eaten</th><th>Rough when eaten</th><th>Rough when not</th><th>Next day after eating / not</th><th>Pattern</th></tr>
+      ${foods.map(r=>`<tr><td>${esc(r.f.name)}</td><td>${r.n}</td><td>${pc(r.sw)}</td><td>${pc(r.swo)}</td><td>${pc(r.nw)} / ${pc(r.nwo)}</td><td>${r.v.t==='Looks innocent'?'No clear link':r.v.t}</td></tr>`).join('')}</table>`:'<div class="muted">Not enough data yet.</div>'}
+    <h3>Other factors</h3>
+    ${circs.length?`<table><tr><th>Factor</th><th>Days</th><th>Rough with</th><th>Rough without</th><th>Pattern</th></tr>
+      ${circs.map(r=> r.helper
+        ? `<tr><td>${esc(r.label)}</td><td>${r.n}</td><td>${r.best?pc(r.best.rw):'–'}</td><td>${r.best?pc(r.best.rwo):'–'}</td><td>${r.v.t.replace('💪 ','')}${r.best?` (${r.best.w==='same'?'same day':r.best.w==='next'?'next day':'within 3 days'})`:''}</td></tr>`
+        : `<tr><td>${esc(r.label)}</td><td>${r.n}</td><td>${pc(r.sw)}</td><td>${pc(r.swo)}</td><td>${r.v.t}</td></tr>`).join('')}</table>`:'<div class="muted">Not enough data yet.</div>'}
+    ${(state.trials||[]).length?`<h3>Elimination trials</h3><table><tr><th>Food removed</th><th>Started</th><th>Length</th><th>Result</th></tr>
+      ${state.trials.map(t=>{const f=foodById(t.id);return `<tr><td>${esc(f?f.name:'?')}</td><td>${fmt(t.s)}</td><td>${t.days} days</td><td>${t.v}: ${esc(t.why)}</td></tr>`}).join('')}</table>`:''}
+    <h3>Last ${last.length} days</h3>
+    <table><tr><th>Date</th><th>Foods</th><th>Day</th><th>Night</th><th>Bowel</th><th>Notes</th></tr>
+      ${last.map(k=>{const e=state.entries[k];const f=e.foods.map(id=>foodById(id)).filter(Boolean).map(x=>x.name).join(', ');
+        const c=state.circs.filter(c=>hasCirc(k,c)).map(c=>c.name).join(', ');
+        return `<tr><td>${parseKey(k).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})}</td><td>${esc(f)}${c?`<div class="muted">${esc(c)}</div>`:''}</td><td>${word[e.day]||''}</td><td>${word[e.night]||''}</td><td>${word[e.poop]||''}</td><td>${esc([e.foodNote,e.note].filter(Boolean).join(' · '))}</td></tr>`}).join('')}</table>
+    <p class="muted" style="margin-top:16px">Self-recorded daily log. "Pattern" compares how often rough days occur with vs without each item. It shows associations only, not causes, and foods eaten together can share the blame.</p>`;
+  document.getElementById('report').hidden=false; document.body.classList.add('reporting'); window.scrollTo(0,0);
+}
+function closeReport(){ document.getElementById('report').hidden=true; document.body.classList.remove('reporting'); window.scrollTo(0,0); }
+document.getElementById('reportBtn').onclick=openReport;
+
 // ---- tabs
 function show(v){
   document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  if(v==='log') renderLog(); if(v==='clues') renderClues(); if(v==='file') renderHistory();
+  if(v==='log') renderLog(); if(v==='clues') renderClues(); if(v==='file'){ histShown=7; renderHistory(); }
   window.scrollTo(0,0);
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.v));
