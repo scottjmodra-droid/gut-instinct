@@ -352,7 +352,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="stats" id="stats"></div>
     <div class="card" id="clues"></div>
     <div class="card" id="cluesCircs" hidden></div>
-    <p class="note" style="padding:0 4px">A <b>rough day</b> = stomach (day or night) or poop rated 😣 bad. <b>Circumstances</b> are checked the same way: an <i>accomplice</i> lines up with more rough days, a <i>good alibi</i> with fewer. Each suspect compares rough days <i>when eaten</i> vs <i>when not</i> — same day, and the day after (reactions can lag). Foods that often travel together (garlic + onion, say) will share the blame; try cutting one at a time to separate them. This spots patterns, not diagnoses.</p>
+    <p class="note" style="padding:0 4px">A <b>rough day</b> = stomach (day or night) or poop rated 😣 bad. <b>Circumstances</b> are checked the same way: an <i>accomplice</i> lines up with more rough days. For exercise and water it's <i>going without</i> that's investigated. Each suspect compares rough days <i>when eaten</i> vs <i>when not</i> — same day, and the day after (reactions can lag). Foods that often travel together (garlic + onion, say) will share the blame; try cutting one at a time to separate them. This spots patterns, not diagnoses.</p>
   </section>
 
   <!-- CASE FILE -->
@@ -416,7 +416,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.2 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.3 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -431,8 +431,8 @@ const DEFAULT_FOODS = [
 const MAX_FOODS = 15;
 const DEFAULT_CIRCS = [
   {id:'period',name:'Period',emoji:'📅'},
-  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️'},
-  {id:'water',name:'Enough water',emoji:'💧'}
+  {id:'exercise',name:'Exercised',emoji:'🏃‍♀️',helps:true,miss:'No exercise'},
+  {id:'water',name:'Enough water',emoji:'💧',helps:true,miss:'Not enough water'}
 ];
 const SYMS = [
   // night is logged the morning after, but saved against the previous day (the day the food was eaten)
@@ -457,6 +457,8 @@ function ensureDefaults(s){
   s.foods=s.foods.filter(f=>!(f.hidden && defF.has(f.id) && !usedF.has(f.id)));
 }
 ensureDefaults(state);
+// v2.3: exercise + water are 'helpers' — in Clues it's going without them that's investigated
+state.circs.forEach(c=>{ const d=DEFAULT_CIRCS.find(x=>x.id===c.id); if(d && d.helps && c.helps===undefined){ c.helps=true; c.miss=d.miss; } });
 { const p=state.circs.find(c=>c.id==='period'); if(p && p.emoji==='🩸'){ p.emoji='📅'; try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} } }
 if(!state.startedAt){ state.startedAt=Date.now(); try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} }
 let cur = todayKey();
@@ -736,15 +738,17 @@ function renderClues(){
   // circumstances: same-day comparison
   const cbox=document.getElementById('cluesCircs');
   const crow = state.circs.map(c=>{
-    const W=withSym.filter(k=>hasCirc(k,c)).map(k=>state.entries[k]);
-    const Wo=withSym.filter(k=>!hasCirc(k,c)).map(k=>state.entries[k]);
+    // helpers (exercise, water): the suspect is going WITHOUT them
+    const on = k => c.helps ? !hasCirc(k,c) : hasCirc(k,c);
+    const W=withSym.filter(on).map(k=>state.entries[k]);
+    const Wo=withSym.filter(k=>!on(k)).map(k=>state.entries[k]);
     const sw=rate(W), swo=rate(Wo), n=W.length;
     const d = sw!=null&&swo!=null ? sw-swo : 0;
     let v;
     if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:0};
-    else if(Wo.length<MIN) v={c:'v-na',t:'Every day',o:0,why:'Ticked nearly every day, so there\'s nothing to compare against yet.'};
+    else if(Wo.length<MIN) v={c:'v-na',t:c.helps?'Rarely ticked':'Every day',o:0,why: c.helps ? 'Hardly any days with it ticked yet, so there\'s nothing to compare against.' : 'Ticked nearly every day, so there\'s nothing to compare against yet.'};
     else if(d>=0.10) v={c:'v-prime',t:'Accomplice',o:3};
-    else if(d<=-0.10) v={c:'v-inn',t:'Good alibi',o:2};
+    else if(d<=-0.10) v={c:'v-inn',t:'Looks innocent',o:2};
     else v={c:'v-na',t:'No clear effect',o:1};
     return {c,n,sw,swo,v,d,used:n>0};
   }).filter(r=>r.used || !r.c.hidden);
@@ -753,13 +757,13 @@ function renderClues(){
   cbox.innerHTML = `<h2 style="margin-bottom:10px">Circumstances</h2>` + crow.map(r=>`
     <div class="suspect">
       <div class="row1">
-        <span class="name">${esc(r.c.emoji||'📌')} ${esc(r.c.name)} <span class="hidden-tag">· ${r.n} day${r.n===1?'':'s'}</span></span>
+        <span class="name">${r.c.helps?'🚫':esc(r.c.emoji||'📌')} ${esc(r.c.helps?(r.c.miss||'Without '+r.c.name):r.c.name)} <span class="hidden-tag">· ${r.n} day${r.n===1?'':'s'}</span></span>
         <span class="verdict ${r.v.c}">${r.v.t}</span>
       </div>
       ${r.v.why? `<p class="note" style="margin:0 0 8px">${r.v.why}</p>`:''}
       ${r.n? `<div class="bars">
-        <span>on those days</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
-        <span>other days</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
+        <span>${r.c.helps?'days without':'on those days'}</span>${bar(r.sw,'w')}<span class="pct">${pct(r.sw)}</span>
+        <span>${r.c.helps?'days with':'other days'}</span>${bar(r.swo,'wo')}<span class="pct">${pct(r.swo)}</span>
       </div>`:''}
     </div>`).join('');
 }
