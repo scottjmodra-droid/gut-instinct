@@ -166,6 +166,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .verdicts div{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;gap:8px}
 .chip .tr{font-size:10px;color:var(--bad);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .headline{border-width:2px}
+.mat{margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--line);font-size:13px;color:var(--muted)}
+.mat.done{color:var(--ink)}
+.matrow{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.matrow b{color:var(--ink)}
+.matbar{height:6px;border-radius:3px;background:var(--none-soft);overflow:hidden;margin-top:6px}
+.matbar i{display:block;height:100%;background:var(--accent);border-radius:3px}
 .headline .hl{font-size:16px;line-height:1.45}
 .headline .hl b{font-weight:700}
 .headline .hl2{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.4}
@@ -432,7 +438,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.7 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.8 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -682,6 +688,9 @@ function hasSym(e){ return !!(e && (e.day||e.night||e.poop)); }
 function rate(list){ return list.length? list.filter(rough).length/list.length : null; }
 
 const MIN=3;
+const MATURE=30, LEADS_FROM=14;
+function evidenceDays(){ return Object.keys(state.entries).filter(k=>hasSym(state.entries[k])).length; }
+const early = () => evidenceDays() < MATURE;
 function analyseFoods(keys, withSym){
   return state.foods.map(f=>{
     const ate=k=>state.entries[k].foods.includes(f.id);
@@ -702,7 +711,7 @@ function analyseFoods(keys, withSym){
     let v;
     if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:1};
     else if(sameWo.length<MIN) v={c:'v-na',t:'No alibi days',o:1,why:'Eaten nearly every day, so there\'s nothing to compare against. Try a few days without it.'};
-    else if(best>=0.25) v={c:'v-prime',t:'Prime suspect',o:4};
+    else if(best>=0.25) v={c:'v-prime',t:early()?'Early lead':'Prime suspect',o:4};
     else if(best>=0.10) v={c:'v-poi',t:'Person of interest',o:3};
     else v={c:'v-inn',t:'Looks innocent',o:2};
     const win = (d2!=null && (d1==null || d2>d1)) ? 'next' : 'same';
@@ -730,7 +739,7 @@ function helperRow(c, keys, withSym){
   const n=withSym.filter(did).length;
   let v;
   if(!best) v={c:'v-na',t:'Needs more evidence',o:0};
-  else if(best.gain>=0.10) v={c:'v-inn',t:'💪 Seems to help',o:2};
+  else if(best.gain>=0.10) v={c:'v-inn',t:early()?'💪 Might help':'💪 Seems to help',o:2};
   else v={c:'v-na',t:'No clear link',o:1};
   return {c,n,v,best,helper:true,label:c.show||c.name,em:c.emoji||'📌',used:n>0,d:best?best.gain:0};
 }
@@ -755,7 +764,7 @@ function renderClues(){
 
   if(withSym.length<3){
     cbox.hidden=true; box.hidden=true;
-    hl.innerHTML=`<div class="kick">The investigation</div><div class="hl">🕵️ Not enough evidence yet.</div><div class="hl2">Log ${3-withSym.length} more day${3-withSym.length===1?'':'s'} and the suspects will start to show their hand. Patterns get reliable after 2–3 weeks.</div>`;
+    hl.innerHTML=`<div class="mat"><div class="matrow"><span>🗂️ Investigation: <b>${evidenceDays()} of ${MATURE} days</b></span><span>too early to tell</span></div><div class="matbar"><i style="width:${evidenceDays()/MATURE*100}%"></i></div></div><div class="kick">The investigation</div><div class="hl">🕵️ Not enough evidence yet.</div><div class="hl2">Log ${3-withSym.length} more day${3-withSym.length===1?'':'s'} and the suspects will start to show their hand. Patterns get reliable after 2–3 weeks.</div>`;
     return;
   }
   box.hidden=false;
@@ -778,7 +787,7 @@ function renderClues(){
     let v;
     if(n<MIN) v={c:'v-na',t:'Needs more evidence',o:0};
     else if(Wo.length<MIN) v={c:'v-na',t:'Can\'t compare',o:0};
-    else if(d>=0.10) v={c:'v-prime',t:'Accomplice',o:3};
+    else if(d>=0.10) v={c:'v-prime',t:early()?'Early lead':'Accomplice',o:3};
     else v={c:'v-na',t:'No clear link',o:1};
     const label = c.name;
     const em = c.emoji||'📌';
@@ -788,22 +797,26 @@ function renderClues(){
 
   // ---- headline
   const top = judged.find(r=>r.v.c==='v-prime') || judged.find(r=>r.v.c==='v-poi');
-  const acc = crow.find(r=>r.v.t==='Accomplice');
+  const acc = crow.find(r=>!r.helper && r.v.c==='v-prime');
   const when = r => r.win==='next' ? 'the day after eating it' : 'on days you ate it';
   let H;
   if(top){
-    H=`<div class="kick">${top.v.c==='v-prime'?'Prime suspect':'Person of interest'}</div>
+    H=`<div class="kick">${top.v.c==='v-prime'?(early()?'Early lead':'Prime suspect'):'Person of interest'}</div>
        <div class="hl">🔍 <b>${esc(top.f.emoji)} ${esc(top.f.name)}</b>. You had a rough day <b>${top.wR} of ${top.wN} times</b> ${when(top)}, compared with <b>${pct(top.win==='next'?top.nwo:top.swo)}</b> of the time when you didn't.</div>`;
   } else {
     H=`<div class="kick">The investigation</div><div class="hl">🕵️ No suspect stands out yet.</div>
        <div class="hl2">${judged.length?'So far the rough days aren\'t lining up with any one food. Keep logging.':'Most suspects need a few more days of evidence.'}</div>`;
   }
-  const helps = crow.filter(r=>r.helper && r.v.t.includes('help')).sort((a,b)=>b.d-a.d)[0];
+  const helps = crow.filter(r=>r.helper && r.v.c==='v-inn').sort((a,b)=>b.d-a.d)[0];
   if(helps){ const p=helps.c.phr||{}; const ph=(p[helps.best.w]||['with it','without'])[0];
     H+=`<div class="hl2">💪 <b>Good news:</b> rough days drop from <b>${pct(helps.best.rwo)}</b> to <b>${pct(helps.best.rw)}</b> ${ph}.</div>`; }
   if(acc) H+=`<div class="hl2">Also: <b>${acc.em} ${esc(acc.label)}</b> lines up with rough days (${acc.wR} of ${acc.n} days).</div>`;
   const tt=state.trial; if(tt){ const tf=foodById(tt.id); if(tf) H+=`<div class="hl2">⚖️ ${esc(tf.emoji)} ${esc(tf.name)} is on trial — day ${Math.min(tt.days,daysBetween(tt.s,todayKey())+1)} of ${tt.days}.</div>`; }
-  hl.innerHTML=H;
+  const ed=evidenceDays();
+  const mat = ed>=MATURE
+    ? `<div class="mat done">✅ <b>${ed} days of evidence.</b> Enough to act on.</div>`
+    : `<div class="mat"><div class="matrow"><span>🗂️ Investigation: <b>${ed} of ${MATURE} days</b></span><span>${ed<LEADS_FROM?'too early to tell':'early leads only'}</span></div><div class="matbar"><i style="width:${ed/MATURE*100}%"></i></div></div>`;
+  hl.innerHTML=mat+H;
 
   // ---- suspect cards: judged ones get one simple comparison, tap for details
   const names = list => list.map(r=>`${esc(r.f.emoji)} ${esc(r.f.name)}`).join(', ');
@@ -1083,13 +1096,14 @@ function allTimeRows(){
   return withSym.length<3 ? [] : analyseFoods(keys, withSym);
 }
 function checkLeads(){
+  if(evidenceDays()<LEADS_FROM) return;          // too early to raise the alarm
   const prime=allTimeRows().filter(r=>r.v.c==='v-prime').map(r=>r.f.id);
-  if(!state.knownLeads){ state.knownLeads=prime; save(false); return; }
+  if(!state.knownLeads) state.knownLeads=[];
   const fresh=prime.filter(id=>!state.knownLeads.includes(id));
   state.knownLeads=prime; save(false);
   fresh.forEach(id=>{ const f=foodById(id); if(!f) return;
-    queueModal(`<div class="big">🚨</div><h2>New lead!</h2><p><b>${esc(f.emoji)} ${esc(f.name)}</b> is now a <b>Prime suspect</b>.</p>
-      <p class="sub">Rough days are showing up noticeably more often around it. Want to put it on trial?</p>
+    queueModal(`<div class="big">🚨</div><h2>New lead!</h2><p><b>${esc(f.emoji)} ${esc(f.name)}</b> is now ${early()?'an <b>early lead</b>':'a <b>Prime suspect</b>'}.</p>
+      <p class="sub">Rough days are showing up noticeably more often around it. ${early()?`Keep logging. It's worth acting on after ${MATURE} days (you're on ${evidenceDays()}).`:'Want to put it on trial?'}</p>
       <button class="primary" data-act="clues">See the evidence</button><div class="tapnote tapclose">later</div>`);
   });
 }
@@ -1147,6 +1161,7 @@ function renderTrial(){
   const opts=activeFoods().map(f=>`<button data-id="${f.id}" class="${trialPick===f.id?'on':''}">${esc(f.emoji)} ${esc(f.name)}</button>`).join('');
   box.innerHTML=`<h2>⚖️ Put a suspect on trial</h2>
     <div class="sub">Cut one suspect completely for a while, keep logging, and get a verdict at the end. Best with one at a time.</div>
+    ${early()?`<div class="waiting" style="border:0;padding:8px 0 0;margin:0">⏳ Best started once you've got a month of data. You're on ${evidenceDays()} of ${MATURE} days, so the clues will tell you which suspect to try first.</div>`:''}
     <div class="trialpick" id="tpick">${opts}</div>
     <div class="seg" id="tdays" style="margin:0 0 10px"><button data-d="7" class="${trialDays===7?'on':''}">7 days</button><button data-d="14" class="${trialDays===14?'on':''}">14 days</button></div>
     <button class="primary" id="trialGo" ${trialPick?'':'disabled style="opacity:.5"'}>Start the trial</button>${hist}`;
