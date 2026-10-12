@@ -61,7 +61,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .datenav button:disabled{opacity:.3}
 .datelabel{text-align:center;flex:1}
 .datelabel b{display:block;font-size:17px}
-.saved{color:var(--good);font-size:12px;height:16px;transition:opacity .4s}
+.dsub{display:block;font-size:13px;color:var(--muted)}
+.saved{display:block;color:var(--good);font-size:12px;height:16px;transition:opacity .4s}
 
 /* suspects */
 .chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -232,7 +233,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="card">
       <div class="datenav">
         <button id="prev" aria-label="Previous day">‹</button>
-        <div class="datelabel"><b id="dlabel"></b><span class="saved" id="saved"></span></div>
+        <div class="datelabel"><b id="dlabel"></b><span class="dsub" id="dsub"></span><span class="saved" id="saved"></span></div>
         <button id="next" aria-label="Next day">›</button>
       </div>
     </div>
@@ -244,6 +245,10 @@ nav.tabs button.on .e{filter:none;opacity:1}
       </div>
       <div class="chips" id="chips"></div>
       <button class="linkbtn sameas" id="sameAs" hidden>↺ Same as yesterday</button>
+      <details id="foodNoteWrap" style="margin-top:10px">
+        <summary>+ Add a note</summary>
+        <textarea id="foodNote" rows="2" placeholder="What did you eat? e.g. pizza night, ate out at Thai…"></textarea>
+      </details>
     </div>
 
     <div class="card">
@@ -330,7 +335,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v1.13 · 12 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v1.14 · 12 Oct 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -351,7 +356,7 @@ const DEFAULT_CIRCS = [
 const SYMS = [
   // night is logged the morning after, but saved against the previous day (the day the food was eaten)
   {k:'night',off:-1,label:'🌙 Last night',sub:k=>parseKey(k).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})},
-  {k:'day',label:'☀️ Today',sub:''},
+  {k:'day',label:'☀️ Today',sub:k=>shortDate(k)},
   {k:'poop',label:'<span class="big" aria-label="Poop">💩</span>',sub:'',none:true}
 ];
 const STOMACH_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'}];
@@ -411,6 +416,7 @@ function keyOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDa
 function todayKey(){return keyOf(new Date())}
 function parseKey(k){const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
 function addDays(k,n){const d=parseKey(k);d.setDate(d.getDate()+n);return keyOf(d)}
+function shortDate(k){ return parseKey(k).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'}); }
 function niceDate(k){
   const t=todayKey();
   if(k===t) return 'Today';
@@ -420,7 +426,7 @@ function niceDate(k){
 
 function entry(k){ const e=state.entries[k] || {foods:[],day:null,night:null,poop:null,note:''}; if(!e.circs) e.circs=[]; return e; }
 function setEntry(k,e){
-  const empty = !e.foods.length && !(e.circs||[]).length && !e.day && !e.night && !e.poop && !(e.note||'').trim() && !e.checked;
+  const empty = !e.foods.length && !(e.circs||[]).length && !e.day && !e.night && !e.poop && !(e.note||'').trim() && !(e.foodNote||'').trim() && !e.checked;
   if(empty) delete state.entries[k]; else state.entries[k]=e;
   save();
 }
@@ -451,6 +457,8 @@ const activeFoods = () => state.foods.filter(f=>!f.hidden);
 // ---- LOG view
 function renderLog(){
   document.getElementById('dlabel').textContent = niceDate(cur);
+  const isRel = cur===todayKey() || cur===addDays(todayKey(),-1);
+  document.getElementById('dsub').textContent = isRel ? shortDate(cur) : '';
   document.getElementById('next').disabled = cur>=todayKey();
   const e = entry(cur);
 
@@ -512,6 +520,9 @@ function renderLog(){
 
   renderBanners();
 
+  const fnote=document.getElementById('foodNote');
+  fnote.value=e.foodNote||'';
+  document.getElementById('foodNoteWrap').open = !!(e.foodNote||'').trim();
   const note=document.getElementById('note');
   note.value=e.note||'';
   document.getElementById('noteWrap').open = !!(e.note||'').trim();
@@ -519,6 +530,9 @@ function renderLog(){
   const n=Object.keys(state.entries).length;
   document.getElementById('streak').textContent = n? `${n} day${n>1?'s':''} logged` : '';
 }
+document.getElementById('foodNote').addEventListener('input',ev=>{
+  const x=entry(cur); x.foodNote=ev.target.value; setEntry(cur,x);
+});
 document.getElementById('note').addEventListener('input',ev=>{
   const x=entry(cur); x.note=ev.target.value; setEntry(cur,x);
 });
@@ -707,11 +721,11 @@ function csvCell(s){ s=String(s??''); return /[",\n]/.test(s)?'"'+s.replace(/"/g
 document.getElementById('csvBtn').onclick=()=>{
   const foods=state.foods.filter(f=>!f.hidden || Object.values(state.entries).some(e=>e.foods.includes(f.id)));
   const circs=state.circs;
-  const head=['date',...foods.map(f=>f.name),...circs.map(c=>c.name),'stomach_day','stomach_night','poop','note'];
+  const head=['date',...foods.map(f=>f.name),...circs.map(c=>c.name),'stomach_day','stomach_night','poop','food_note','symptom_note'];
   const lines=[head.map(csvCell).join(',')];
   Object.keys(state.entries).sort().forEach(k=>{
     const e=state.entries[k];
-    lines.push([k,...foods.map(f=>e.foods.includes(f.id)?1:0),...circs.map(c=>hasCirc(k,c)?1:0),e.day||'',e.night||'',e.poop||'',e.note||''].map(csvCell).join(','));
+    lines.push([k,...foods.map(f=>e.foods.includes(f.id)?1:0),...circs.map(c=>hasCirc(k,c)?1:0),e.day||'',e.night||'',e.poop||'',e.foodNote||'',e.note||''].map(csvCell).join(','));
   });
   saveFile(`gut-instinct-${todayKey()}.csv`,lines.join('\n'),'text/csv');
 };
