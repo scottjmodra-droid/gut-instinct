@@ -397,7 +397,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
     <div class="card" id="cluesCircs" hidden></div>
     <div class="card" id="trialCard"></div>
     <div class="stats" id="stats"></div>
-    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is any 😣 rating. For exercise and water, Clues looks for a benefit the same day, the next day, or within 3 days after. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
+    <p class="note" style="padding:0 4px">Tap a suspect for the full breakdown. A <b>rough day</b> is a 😣 stomach rating or a day with no poop. For exercise and water, Clues looks for a benefit the same day, the next day, or within 3 days after. Foods eaten together (garlic + onion) share the blame. A trial separates them. This spots patterns, not diagnoses.</p>
   </section>
 
   <!-- CASE FILE -->
@@ -464,7 +464,7 @@ nav.tabs button.on .e{filter:none;opacity:1}
 </div>
 
 <script>
-const APP_VERSION = 'v2.15 · 13 Oct 2026';  // bump this with every change
+const APP_VERSION = 'v2.16 · 7 Nov 2026';  // bump this with every change
 const KEY = 'gutcheck_v1';
 const DEFAULT_FOODS = [
   {id:'gluten',name:'Gluten',emoji:'🍞'},
@@ -491,7 +491,7 @@ const SYMS = [
   {k:'poop',label:'<span class="big" aria-label="Poop">💩</span>',sub:'',none:true}
 ];
 const STOMACH_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'}];
-const POOP_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'bad',e:'😣',n:'Bad'},{v:'none',e:'🚫',n:'None'}];
+const POOP_OPTS = [{v:'good',e:'😊',n:'Good'},{v:'ok',e:'😐',n:'OK'},{v:'none',e:'🚫',n:'None'}];
 const FACE = {good:'😊',ok:'😐',bad:'😣',none:'🚫'};
 
 let state = load();
@@ -711,7 +711,7 @@ document.getElementById('prev').onclick=()=>{cur=addDays(cur,-1);renderLog()};
 document.getElementById('next').onclick=()=>{if(cur<todayKey()){cur=addDays(cur,1);renderLog()}};
 
 // ---- CLUES
-function rough(e){ return e.day==='bad'||e.night==='bad'||e.poop==='bad'; }
+function rough(e){ return e.day==='bad'||e.night==='bad'||e.poop==='bad'||e.poop==='none'; }
 function hasSym(e){ return !!(e && (e.day||e.night||e.poop)); }
 function rate(list){ return list.length? list.filter(rough).length/list.length : null; }
 
@@ -1323,7 +1323,7 @@ function openReport(){
     <div class="muted">${withSym.length?`${fmt(withSym[0])} – ${fmt(withSym[withSym.length-1])}`:'No days logged'} · generated ${fmt(todayKey())}</div>
     <h3>Overview</h3>
     <table><tr><td>Days logged</td><td><b>${withSym.length}</b></td></tr>
-    <tr><td>"Rough" days (stomach by day or night, or bowel movement, rated bad)</td><td><b>${roughN}</b> (${pc(withSym.length?roughN/withSym.length:null)})</td></tr></table>
+    <tr><td>"Rough" days (stomach by day or night rated bad, or no bowel movement)</td><td><b>${roughN}</b> (${pc(withSym.length?roughN/withSym.length:null)})</td></tr></table>
     <h3>Foods tracked</h3>
     ${foods.length?`<table><tr><th>Food</th><th>Days eaten</th><th>Rough when eaten</th><th>Rough when not</th><th>Next day after eating / not</th><th>Pattern</th></tr>
       ${foods.map(r=>`<tr><td>${esc(r.f.name)}</td><td>${r.n}</td><td>${pc(r.sw)}</td><td>${pc(r.swo)}</td><td>${pc(r.nw)} / ${pc(r.nwo)}</td><td>${r.v.t==='Looks innocent'?'No clear link':r.v.t}</td></tr>`).join('')}</table>`:'<div class="muted">Not enough data yet.</div>'}
